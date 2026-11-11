@@ -1,5 +1,9 @@
 # Lichen Journal
 
+> **Development status:** Lichen Journal is currently in development and is
+> undergoing a lot of changes. Features, storage details, and packaging may
+> change before a stable release.
+
 **Private daily writing with offline AI. 100% on your machine, zero subscriptions.**
 
 Lichen Journal is a desktop daily journal with a local SQLite vault, instant
