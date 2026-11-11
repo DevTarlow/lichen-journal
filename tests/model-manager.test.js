@@ -204,6 +204,53 @@ describe('model store', () => {
     expect(store.getActivePath('legacy')).toBe(path.join(legacyDir, 'legacy.bin'));
   });
 
+  it('removes downloaded files, partials, and markers without touching other files', () => {
+    const data = Buffer.from('remove-data-'.repeat(200));
+    const modelDir = makeTempDir();
+    const legacyDir = makeTempDir();
+    const asset = makeAsset('remove', data, 'https://example.invalid/remove.bin');
+    fs.writeFileSync(path.join(modelDir, asset.file), data);
+    fs.writeFileSync(path.join(modelDir, `${asset.file}.part`), data.subarray(0, 20));
+    fs.writeFileSync(path.join(modelDir, `${asset.file}.sha256`), 'digest\n');
+    fs.writeFileSync(path.join(modelDir, 'keep.txt'), 'keep me');
+    fs.writeFileSync(path.join(legacyDir, asset.file), data);
+    const store = new ModelStore({ modelDir, legacyDir, assets: [asset] });
+
+    const status = store.removeDownloaded();
+
+    expect(fs.existsSync(path.join(modelDir, asset.file))).toBe(false);
+    expect(fs.existsSync(path.join(modelDir, `${asset.file}.part`))).toBe(false);
+    expect(fs.existsSync(path.join(modelDir, `${asset.file}.sha256`))).toBe(false);
+    expect(fs.readFileSync(path.join(modelDir, 'keep.txt'), 'utf8')).toBe('keep me');
+    expect(fs.existsSync(path.join(legacyDir, asset.file))).toBe(true);
+    expect(status.assets.remove.state).toBe('ready');
+    expect(status.assets.remove.source).toBe('legacy');
+    expect(status.errors).toEqual({});
+  });
+
+  it('rejects clearing model files while a download is running', async () => {
+    const data = Buffer.from('busy-remove-'.repeat(1000));
+    const base = await startServer({ '/busy-remove.bin': data }, new Set(['/busy-remove.bin']));
+    const modelDir = makeTempDir();
+    const store = new ModelStore({
+      modelDir,
+      assets: [makeAsset('busy-remove', data, `${base}/busy-remove.bin`)],
+      stallTimeoutMs: 5000
+    });
+
+    const job = store.download('busy-remove');
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    let caught = null;
+    try {
+      store.removeDownloaded();
+    } catch (error) {
+      caught = error;
+    }
+    expect(caught).toMatchObject({ code: 'MODEL_DOWNLOAD_BUSY' });
+    store.cancel();
+    await job.catch(() => {});
+  });
+
   it('rejects overlapping downloads', async () => {
     const data = Buffer.from('busy-data-'.repeat(1000));
     const base = await startServer({ '/busy.bin': data });

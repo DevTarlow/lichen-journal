@@ -48,6 +48,9 @@ export const api = {
     onFlushBeforeClose: (callback) => bridge().app.onFlushBeforeClose(callback),
     flushComplete: () => bridge().app.flushComplete()
   },
+  dev: {
+    reset: (mode) => call(() => bridge().dev.reset(mode))
+  },
   vault: {
     info: () => call(() => bridge().vault.info()),
     get: (date) => call(() => bridge().vault.get(date)),

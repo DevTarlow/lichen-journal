@@ -9,6 +9,7 @@ import AdmZip from 'adm-zip';
 const ROOT = process.cwd();
 const require = createRequire(path.join(ROOT, 'e2e', 'app.spec.js'));
 const { Vault } = require('../src/main/db.js');
+const { computeCapabilities } = require('../src/main/compute-utils.js');
 const BODY = 'The moss by the river was bright after the rain. I felt quiet and a little hopeful.';
 
 async function launchApp(userDataDir, extraEnv = {}) {
@@ -1126,6 +1127,154 @@ test('downloads the model setup queue and installs verified files', async () => 
   } finally {
     await app.close().catch(() => {});
     await new Promise((resolve) => server.close(resolve));
+    fs.rmSync(userDataDir, { recursive: true, force: true });
+    fs.rmSync(modelDir, { recursive: true, force: true });
+  }
+});
+
+
+test('developer reset clears all data or keeps models with mock entries', async () => {
+  test.setTimeout(90_000);
+  const userDataDir = makeUserDataDir();
+  const modelDir = fs.mkdtempSync(path.join(ROOT, '.e2e-models-'));
+  const bodies = {
+    '/companion': Buffer.from('companion-model-'.repeat(200)),
+    '/ocr': Buffer.from('ocr-model-'.repeat(200)),
+    '/projector': Buffer.from('projector-'.repeat(200))
+  };
+  const manifest = [
+    {
+      id: 'companion',
+      label: 'Companion',
+      file: 'MiniCPM-V-4_7-1B-Q4_K_M.gguf',
+      bytes: bodies['/companion'].length,
+      sha256: crypto.createHash('sha256').update(bodies['/companion']).digest('hex'),
+      url: 'https://example.invalid/companion'
+    },
+    {
+      id: 'ocrModel',
+      label: 'Photo reader',
+      file: 'MiniCPM-OCR-1_0-Q4_K_M.gguf',
+      bytes: bodies['/ocr'].length,
+      sha256: crypto.createHash('sha256').update(bodies['/ocr']).digest('hex'),
+      url: 'https://example.invalid/ocr'
+    },
+    {
+      id: 'ocrProjector',
+      label: 'Vision projector',
+      file: 'mmproj-model-f16-4x.gguf',
+      bytes: bodies['/projector'].length,
+      sha256: crypto.createHash('sha256').update(bodies['/projector']).digest('hex'),
+      url: 'https://example.invalid/projector'
+    }
+  ];
+  for (const asset of manifest) {
+    const body =
+      asset.id === 'companion'
+        ? bodies['/companion']
+        : asset.id === 'ocrModel'
+          ? bodies['/ocr']
+          : bodies['/projector'];
+    fs.writeFileSync(path.join(modelDir, asset.file), body);
+  }
+  fs.writeFileSync(
+    path.join(userDataDir, 'settings.json'),
+    JSON.stringify({
+      version: 1,
+      compute: {
+        mode: 'gpu',
+        choiceMade: true,
+        verified: true,
+        backend: 'vulkan',
+        lastError: null,
+        updatedAt: '2026-11-11T00:00:00.000Z'
+      }
+    })
+  );
+
+  const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(
+    now.getDate()
+  ).padStart(2, '0')}`;
+  const vault = new Vault({
+    dbPath: path.join(userDataDir, 'vault', 'lichen_journal.sqlite'),
+    appVersion: 'test'
+  });
+  vault.init();
+  vault.saveEntry({ date: today, title: 'Existing entry', body: 'Existing words.' });
+  vault.close();
+
+  const { app, page, errors } = await launchApp(userDataDir, {
+    LICHEN_MODEL_DIR: modelDir,
+    LICHEN_MODEL_TEST_MANIFEST: JSON.stringify(manifest)
+  });
+  try {
+    const freshButton = page.getByRole('button', { name: 'Reset app (developer tool)' });
+    const mockButton = page.getByRole('button', { name: 'Reset app with mock data (developer tool)' });
+    await expect(freshButton).toBeVisible();
+    await expect(mockButton).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Set up the local model files' })
+    ).toHaveCount(0);
+
+    await mockButton.click();
+    await expect(page.getByRole('heading', { name: 'Reset and load mock data?' })).toBeVisible();
+    await page.getByRole('button', { name: 'Reset and load mock data', exact: true }).click();
+    await expect(page.getByLabel('Entry title')).toHaveValue('Moss after the rain', {
+      timeout: 30_000
+    });
+    await expect(page.getByText('Existing entry')).toHaveCount(0);
+    await expect(
+      page.getByRole('heading', { name: 'Set up the local model files' })
+    ).toHaveCount(0);
+    for (const asset of manifest) {
+      expect(fs.existsSync(path.join(modelDir, asset.file))).toBe(true);
+    }
+    const keptSettings = JSON.parse(fs.readFileSync(path.join(userDataDir, 'settings.json'), 'utf8'));
+    expect(keptSettings.compute).toMatchObject({
+      mode: 'gpu',
+      choiceMade: true,
+      verified: true,
+      backend: 'vulkan'
+    });
+
+    await page.getByRole('button', { name: 'Enter minimal writing mode' }).click();
+    await expect(page.locator('.header-dev-tools')).toBeHidden();
+    await page.getByRole('button', { name: 'Leave minimal writing mode' }).click();
+    await expect(page.locator('.header-dev-tools')).toBeVisible();
+
+    await freshButton.click();
+    await expect(page.getByRole('heading', { name: 'Reset the app?' })).toBeVisible();
+    await page.getByRole('button', { name: 'Reset everything', exact: true }).click();
+    await expect(
+      page.getByRole('heading', { name: 'Set up the local model files' })
+    ).toBeVisible({ timeout: 30_000 });
+    for (const asset of manifest) {
+      expect(fs.existsSync(path.join(modelDir, asset.file))).toBe(false);
+    }
+    const capabilities = computeCapabilities(process.platform, process.arch);
+    const resetSettings = JSON.parse(
+      fs.readFileSync(path.join(userDataDir, 'settings.json'), 'utf8')
+    );
+    expect(resetSettings.compute).toMatchObject({
+      mode: capabilities.canChooseGpu ? capabilities.defaultMode : capabilities.fixedMode,
+      choiceMade: !capabilities.canChooseGpu,
+      verified: false,
+      backend: null,
+      lastError: null
+    });
+
+    await app.close();
+    const checkVault = new Vault({
+      dbPath: path.join(userDataDir, 'vault', 'lichen_journal.sqlite'),
+      appVersion: 'test'
+    });
+    checkVault.init();
+    expect(checkVault.getStats().entryCount).toBe(0);
+    checkVault.close();
+    expect(errors).toEqual([]);
+  } finally {
+    await app.close().catch(() => {});
     fs.rmSync(userDataDir, { recursive: true, force: true });
     fs.rmSync(modelDir, { recursive: true, force: true });
   }

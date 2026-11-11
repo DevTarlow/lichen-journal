@@ -28,6 +28,9 @@ const api = {
     onFlushBeforeClose: (callback) => subscribe('app:flush-before-close', callback),
     flushComplete: () => ipcRenderer.send('app:flush-complete')
   },
+  dev: {
+    reset: (mode) => invoke('dev:reset', { mode })
+  },
   vault: {
     info: () => invoke('vault:info'),
     getPath: () => invoke('vault:get-path'),

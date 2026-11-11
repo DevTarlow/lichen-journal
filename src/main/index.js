@@ -429,6 +429,32 @@ function registerIpc() {
     return { ...result, info: fullVaultInfo() };
   });
 
+  if (!app.isPackaged) {
+    const { performDevReset } = require('./dev-reset');
+    handle('dev:reset', async ({ mode }) => {
+      pendingImages.clear();
+      const result = await performDevReset({
+        mode,
+        vault,
+        modelStore,
+        settings: settingsStore,
+        ai,
+        ocr,
+        compute
+      });
+      syncModelPaths();
+      broadcast('vault:changed', { reason: 'dev-reset' });
+      broadcast('model:status', modelStore.getStatus());
+      broadcast('ai:status', ai.getStatus());
+      if (compute) broadcast('compute:changed', compute.getStatus());
+      return {
+        ...result,
+        info: fullVaultInfo(),
+        modelStatus: modelStore.getStatus()
+      };
+    });
+  }
+
   handle('vault:open-folder', async () => {
     const error = await shell.openPath(vault.vaultDir);
     return { opened: !error, error: error || null };

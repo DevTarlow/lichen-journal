@@ -460,6 +460,22 @@ processor path. On headless Linux CI,
 tests launch Electron with `--no-sandbox --disable-gpu --user-data-dir=…` and
 `ELECTRON_OZONE_PLATFORM_HINT=x11`.
 
+### Development reset controls
+
+When the app runs from source, the header includes two developer-only reset
+buttons. They are not present in packaged builds, and both ask for confirmation
+before changing anything.
+
+- **Reset app** clears every entry, theme and preference, the saved compute
+  setting, and the downloaded model files. The next screen is the first-run
+  setup, exactly as on a new install. In development the deleted GGUFs live in
+  the repository `models/` directory, so restore them with `npm run model:fetch`
+  or download them again from first-run setup.
+- **Reset + mock** clears every entry and resets theme/preferences, but keeps
+  the downloaded models and the saved compute setting. It then seeds eight demo
+  entries relative to today so the calendar, companion rail, Finish page, and
+  reflection answers can be exercised without typing.
+
 Packaged smoke test:
 
 ```bash

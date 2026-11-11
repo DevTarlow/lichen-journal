@@ -132,6 +132,15 @@ class AppSettings {
     this.#write();
     return this.get().compute;
   }
+
+  reset() {
+    this.data = {
+      version: SETTINGS_VERSION,
+      compute: { ...defaultCompute(this.platform, this.arch) }
+    };
+    this.#write();
+    return this.get().compute;
+  }
 }
 
 module.exports = {

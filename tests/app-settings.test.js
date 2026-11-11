@@ -119,4 +119,42 @@ describe('app settings', () => {
       lastError: null
     });
   });
+
+  it('resets to platform defaults and persists the fresh state', () => {
+    const filePath = makeSettingsPath();
+    const settings = new AppSettings({ filePath, platform: 'linux', arch: 'x64' });
+    settings.updateCompute({
+      mode: 'gpu',
+      choiceMade: true,
+      verified: true,
+      backend: 'vulkan',
+      lastError: {
+        code: 'GPU_UNAVAILABLE',
+        message: 'Could not use the video card.',
+        details: 'VK_ERROR_DEVICE_LOST',
+        at: '2026-11-11T00:00:00.000Z'
+      }
+    });
+
+    const compute = settings.reset();
+    expect(compute).toMatchObject({
+      mode: 'cpu',
+      choiceMade: false,
+      verified: false,
+      backend: null,
+      lastError: null
+    });
+
+    const reopened = new AppSettings({ filePath, platform: 'linux', arch: 'x64' });
+    expect(reopened.get().compute).toMatchObject({
+      mode: 'cpu',
+      choiceMade: false,
+      verified: false,
+      backend: null,
+      lastError: null
+    });
+    if (process.platform !== 'win32') {
+      expect(fs.statSync(filePath).mode & 0o777).toBe(0o600);
+    }
+  });
 });

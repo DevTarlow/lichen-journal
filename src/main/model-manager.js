@@ -524,6 +524,31 @@ class ModelStore extends EventEmitter {
     return { status: this.getStatus(), imported, failed };
   }
 
+  removeDownloaded() {
+    this.#assertUsable();
+    this.#assertIdle();
+    let failure = null;
+    for (const asset of this.assets) {
+      for (const name of [asset.file, `${asset.file}.part`, `${asset.file}.sha256`]) {
+        try {
+          fs.rmSync(path.join(this.modelDir, name), { force: true });
+        } catch (error) {
+          failure = failure || error;
+        }
+      }
+    }
+    this.errors.clear();
+    this.#emitStatus(true);
+    if (failure) {
+      throw new ModelManagerError(
+        'MODEL_CLEAR_FAILED',
+        'Some downloaded model files could not be removed. Close any app using them and try again.',
+        typeof failure.message === 'string' ? failure.message.slice(0, 400) : undefined
+      );
+    }
+    return this.getStatus();
+  }
+
   dispose() {
     this.disposed = true;
     this.cancel();

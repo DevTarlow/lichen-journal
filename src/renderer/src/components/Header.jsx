@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  BookOpenIcon,
   EyeIcon,
   EyeOffIcon,
   LichenMark,
@@ -8,13 +9,17 @@ import {
   MoonIcon,
   PhotoIcon,
   SettingsIcon,
-  SunIcon
+  SunIcon,
+  TrashIcon
 } from './Icons.jsx';
 
 export default function Header({
   info,
   theme,
   minimal,
+  showDevTools = false,
+  onResetApp,
+  onResetAppMock,
   onToggleTheme,
   onToggleMinimal,
   onOpenSettings,
@@ -42,6 +47,31 @@ export default function Header({
       </div>
 
       <div className="header-actions">
+        {showDevTools ? (
+          <div className="header-dev-tools" role="group" aria-label="Developer reset tools">
+            <button
+              type="button"
+              className="button button-quiet button-small dev-reset-button dev-reset-fresh"
+              onClick={onResetApp}
+              aria-label="Reset app (developer tool)"
+              title="Developer: delete the journal, preferences, app settings, and downloaded models"
+            >
+              <TrashIcon size={13} />
+              <span className="dev-reset-label">Reset app</span>
+            </button>
+            <button
+              type="button"
+              className="button button-quiet button-small dev-reset-button"
+              onClick={onResetAppMock}
+              aria-label="Reset app with mock data (developer tool)"
+              title="Developer: reset the journal and preferences, keep models and compute settings, and load demo entries"
+            >
+              <BookOpenIcon size={13} />
+              <span className="dev-reset-label">Reset + mock</span>
+            </button>
+          </div>
+        ) : null}
+
         <button
           type="button"
           className="security-badge"

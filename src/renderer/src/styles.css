@@ -578,6 +578,33 @@ blockquote {
   gap: 7px;
 }
 
+.header-dev-tools {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-right: 3px;
+}
+
+.dev-reset-button {
+  gap: 5px;
+  padding-inline: 10px;
+  color: var(--ink-soft);
+}
+
+.dev-reset-button.dev-reset-fresh {
+  color: var(--danger-deep);
+}
+
+.dev-reset-button.dev-reset-fresh:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--danger) 38%, transparent);
+  background: var(--danger-soft);
+  color: var(--danger-deep);
+}
+
+.dev-reset-label {
+  font-size: 0.7rem;
+}
+
 .security-badge {
   display: inline-flex;
   align-items: center;
@@ -3606,6 +3633,28 @@ blockquote {
   flex-wrap: wrap;
 }
 
+.reset-modal {
+  width: min(510px, 100%);
+}
+
+.reset-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 18px;
+}
+
+.reset-modal-detail {
+  font-size: 0.72rem;
+  line-height: 1.55;
+  color: var(--ink-soft);
+}
+
+.reset-modal-detail code {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
 .modal-head {
   display: flex;
   align-items: flex-start;
@@ -4417,6 +4466,7 @@ blockquote {
 
 .app-shell.is-minimal .brand-copy,
 .app-shell.is-minimal .security-badge,
+.app-shell.is-minimal .header-dev-tools,
 .app-shell.is-minimal .photo-toggle,
 .app-shell.is-minimal .settings-toggle,
 .app-shell.is-minimal .theme-toggle,
@@ -4485,6 +4535,16 @@ blockquote {
 
   .companion-pane {
     padding: 20px 16px;
+  }
+
+  .dev-reset-label {
+    display: none;
+  }
+
+  .dev-reset-button {
+    width: 31px;
+    min-height: 31px;
+    padding: 0;
   }
 }
 

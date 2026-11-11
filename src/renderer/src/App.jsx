@@ -9,6 +9,7 @@ import ReflectionAnswerModal from './components/ReflectionAnswerModal.jsx';
 import DeletePageModal from './components/DeletePageModal.jsx';
 import PhotoImportModal from './components/PhotoImportModal.jsx';
 import ModelSetupModal from './components/ModelSetupModal.jsx';
+import ResetAppModal from './components/ResetAppModal.jsx';
 import ToastStack from './components/Toast.jsx';
 import { AlertIcon, LichenMark } from './components/Icons.jsx';
 import { api } from './lib/api.js';
@@ -151,6 +152,7 @@ export default function App() {
   const [photoOpen, setPhotoOpen] = useState(false);
   const [modelSetupOpen, setModelSetupOpen] = useState(false);
   const [modelSetupDismissed, setModelSetupDismissed] = useState(readModelSetupDismissed);
+  const [resetMode, setResetMode] = useState(null);
   const [minimalMode, setMinimalMode] = useState(false);
 
   const toastIdRef = useRef(0);
@@ -683,6 +685,28 @@ export default function App() {
     return result;
   }, [flushDraft, notify, resetAfterPurge]);
 
+  const handleConfirmReset = useCallback(async () => {
+    if (!resetMode) return;
+    await flushDraft();
+    await companion.cancel();
+    companion.clearStream();
+    if (modelSetup.status?.busy) {
+      try {
+        await modelSetup.cancel();
+      } catch {
+        // The reset handler below reports a genuinely busy model store.
+      }
+    }
+    await api.dev.reset(resetMode);
+    try {
+      window.localStorage.clear();
+      window.sessionStorage.clear();
+    } catch {
+      // A blocked storage area should not block the reset.
+    }
+    window.location.reload();
+  }, [companion, flushDraft, modelSetup, resetMode]);
+
   const handleOfflineCheck = useCallback(() => api.app.offlineCheck(), []);
 
   const handleSetMood = useCallback(
@@ -909,7 +933,7 @@ export default function App() {
 
   useEffect(() => {
     const handleKeyDown = (event) => {
-      if (answerModal || deleteTarget || photoOpen || modelSetupOpen) return;
+      if (answerModal || deleteTarget || photoOpen || modelSetupOpen || resetMode) return;
       const modifier = event.metaKey || event.ctrlKey;
       const key = event.key.toLowerCase();
       if (modifier && key === 'k') {
@@ -940,6 +964,7 @@ export default function App() {
     deleteTarget,
     photoOpen,
     modelSetupOpen,
+    resetMode,
     flushDraft,
     minimalMode,
     openSettings,
@@ -966,6 +991,7 @@ export default function App() {
   if (bootState === 'error') return <BootError error={bootError} />;
 
   const shortcutLabel = info?.platform === 'darwin' ? '⌘' : 'Ctrl';
+  const showDevTools = Boolean(info && info.isPackaged === false);
   const showFirstRun =
     (stats?.entryCount ?? info?.stats?.entryCount ?? 0) === 0 &&
     !entry &&
@@ -978,6 +1004,9 @@ export default function App() {
         info={info}
         theme={theme}
         minimal={minimalMode}
+        showDevTools={showDevTools}
+        onResetApp={() => setResetMode('fresh')}
+        onResetAppMock={() => setResetMode('mock')}
         onToggleTheme={toggleTheme}
         onToggleMinimal={toggleMinimalMode}
         onOpenSettings={openSettings}
@@ -1174,6 +1203,18 @@ export default function App() {
           onCancel={modelSetup.cancel}
           onImportFolder={modelSetup.importFolder}
           onImportFile={modelSetup.importFile}
+        />
+      ) : null}
+
+      {resetMode ? (
+        <ResetAppModal
+          open
+          mode={resetMode}
+          entryCount={(stats || info?.stats)?.entryCount ?? 0}
+          modelDir={modelSetup.status?.modelDir || ''}
+          modelBytes={modelSetup.status?.downloadedBytes || 0}
+          onConfirm={handleConfirmReset}
+          onClose={() => setResetMode(null)}
         />
       ) : null}
 
