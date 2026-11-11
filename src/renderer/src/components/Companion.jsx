@@ -1,6 +1,7 @@
 import React from 'react';
 import { countWords, sanitizeCompanionText } from '../lib/text.js';
 import { DEFAULT_REFLECT_LENS, REFLECT_LENSES, lensById } from '../lib/lenses.js';
+import { backendLabel } from '../lib/compute.js';
 import {
   AlertIcon,
   BookOpenIcon,
@@ -13,15 +14,6 @@ import {
   SparkleIcon,
   XIcon
 } from './Icons.jsx';
-
-function backendLabel(backend) {
-  if (!backend) return 'CPU';
-  if (backend === 'cpu') return 'CPU';
-  if (backend === 'metal') return 'Metal';
-  if (backend === 'cuda') return 'CUDA';
-  if (backend === 'vulkan') return 'Vulkan';
-  return String(backend).toUpperCase();
-}
 
 function formatModelBytes(bytes) {
   const value = Number(bytes) || 0;
@@ -58,7 +50,13 @@ function companionView(status, busy) {
     return { label: 'Resting', copy: 'The companion is resting.' };
   }
   if (status.state === 'ready') {
-    return { tone: 'is-ready', label: 'Online', copy: 'Ready on this device.' };
+    return {
+      tone: 'is-ready',
+      label: 'Online',
+      copy: status.computeFallback
+        ? 'Ready on the processor. The video card could not be used.'
+        : 'Ready on this device.'
+    };
   }
   if (status.modelPresent) {
     return { tone: 'is-ready', label: 'Online', copy: 'Loads on the first reflection.' };
@@ -88,7 +86,7 @@ function CompanionStatus({ status, busy }) {
           <p className="companion-tooltip-copy">{view.copy}</p>
           <dl className="companion-tooltip-rows">
             <div>
-              <dt>Backend</dt>
+              <dt>Runs on</dt>
               <dd>{backendLabel(status.backend)}</dd>
             </div>
             <div>

@@ -47,6 +47,7 @@ export default function PhotoImportModal({
   const [saving, setSaving] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [requestId, setRequestId] = useState('');
+  const [fallbackNote, setFallbackNote] = useState('');
 
   onCloseRef.current = onClose;
   savingRef.current = saving;
@@ -61,6 +62,7 @@ export default function PhotoImportModal({
       setText('');
       setPhase('pick');
       setError('');
+      setFallbackNote('');
       setPicking(false);
       setSaving(false);
       setElapsed(0);
@@ -188,10 +190,16 @@ export default function PhotoImportModal({
     setRequestId(id);
     setPhase('reading');
     setError('');
+    setFallbackNote('');
     setElapsed(0);
     try {
       const result = await api.ocr.recognize(token, id);
       setText(result.text || '');
+      setFallbackNote(
+        result.fallback
+          ? "Your video card couldn't read this photo, so the processor did it instead."
+          : ''
+      );
       setPhase('review');
     } catch (err) {
       if (err.code !== 'OCR_CANCELLED') {
@@ -380,6 +388,9 @@ export default function PhotoImportModal({
                   {text.length.toLocaleString()} characters
                 </span>
               </div>
+              {fallbackNote ? (
+                <p className="photo-fallback-note">{fallbackNote}</p>
+              ) : null}
               <textarea
                 id="photo-page-text"
                 className="photo-text"

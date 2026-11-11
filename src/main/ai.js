@@ -21,6 +21,11 @@ const {
   numberSentences,
   palettePrompt
 } = require('./ai-prompts');
+const {
+  friendlyComputeError,
+  normalizeComputeMode,
+  resolveRuntimeOptions
+} = require('./compute-utils');
 
 const CONTEXT_SIZE = 4096;
 const MAX_THREADS = 8;
@@ -35,11 +40,12 @@ class AiEngineError extends Error {
 }
 
 class AiEngine extends EventEmitter {
-  constructor({ modelPath, appVersion = '1.0.0' } = {}) {
+  constructor({ modelPath, appVersion = '1.0.0', computeMode = 'cpu' } = {}) {
     super();
     if (!modelPath) throw new Error('AiEngine requires a model path.');
     this.modelPath = modelPath;
     this.appVersion = appVersion;
+    this.computeMode = normalizeComputeMode(computeMode);
     this.threads = Math.max(
       1,
       Math.min(MAX_THREADS, (os.availableParallelism ? os.availableParallelism() : os.cpus().length) - 1 || 1)
@@ -51,15 +57,29 @@ class AiEngine extends EventEmitter {
     this.queue = Promise.resolve();
     this.controllers = new Map();
     this.disposed = false;
+    this.backend = 'cpu';
+    this.accelerationBackend = 'cpu';
+    this.gpuActive = false;
+    this.gpuLayers = 0;
+    this.computeFallback = null;
     this.status = {
       state: 'idle',
-      backend: process.platform === 'darwin' ? 'metal' : 'cpu',
+      backend: this.#intendedBackend(),
+      computeMode: this.computeMode,
+      gpuActive: false,
+      gpuLayers: 0,
+      accelerationBackend: 'cpu',
+      computeFallback: null,
       threads: this.threads,
       loadProgress: 0,
       error: null,
       ...this.#modelFacts()
     };
     this.#refreshPresence();
+  }
+
+  #intendedBackend() {
+    return this.computeMode === 'gpu' ? 'gpu' : 'cpu';
   }
 
   #modelFacts() {
@@ -111,6 +131,11 @@ class AiEngine extends EventEmitter {
       modelPresent: this.status.modelPresent,
       modelBytes: this.status.modelBytes,
       backend: this.status.backend,
+      accelerationBackend: this.status.accelerationBackend,
+      computeMode: this.status.computeMode,
+      gpuActive: this.status.gpuActive,
+      gpuLayers: this.status.gpuLayers,
+      computeFallback: this.status.computeFallback,
       threads: this.status.threads,
       loadProgress: this.status.loadProgress,
       error: this.status.error,
@@ -121,6 +146,63 @@ class AiEngine extends EventEmitter {
   #setStatus(patch) {
     this.status = { ...this.status, ...patch };
     this.emit('status', this.getStatus());
+  }
+
+  setComputeMode(mode) {
+    this.computeMode = normalizeComputeMode(mode);
+    this.computeFallback = null;
+    this.#setStatus({
+      computeMode: this.computeMode,
+      backend: this.#intendedBackend(),
+      gpuActive: false,
+      gpuLayers: 0,
+      accelerationBackend: 'cpu',
+      computeFallback: null
+    });
+    return this.getStatus();
+  }
+
+  isBusy() {
+    return Boolean(this.loadPromise) || this.controllers.size > 0;
+  }
+
+  async unload() {
+    if (this.disposed) return;
+    this.cancelAll();
+    if (this.loadPromise) {
+      try {
+        await this.loadPromise;
+      } catch {
+        // A failed load is exactly what the caller is trying to replace.
+      }
+    }
+    try {
+      await this.queue;
+    } catch {
+      // Ignore pending generation failures during unload.
+    }
+    if (this.llama) {
+      try {
+        await this.llama.dispose();
+      } catch {
+        // Best effort; a fresh runtime is loaded on the next request.
+      }
+    }
+    this.llama = null;
+    this.model = null;
+    this.nlc = null;
+    this.backend = 'cpu';
+    this.accelerationBackend = 'cpu';
+    this.gpuActive = false;
+    this.gpuLayers = 0;
+    this.#setStatus({
+      state: 'idle',
+      backend: this.#intendedBackend(),
+      accelerationBackend: 'cpu',
+      gpuActive: false,
+      gpuLayers: 0,
+      loadProgress: 0
+    });
   }
 
   async ensureLoaded() {
@@ -151,72 +233,181 @@ class AiEngine extends EventEmitter {
     await this.loadPromise;
   }
 
-  async #load() {
-    this.#setStatus({ state: 'loading', loadProgress: 0, error: null });
+  async #load({ strictGpu = false } = {}) {
+    this.#setStatus({
+      state: 'loading',
+      loadProgress: 0,
+      error: null,
+      computeMode: this.computeMode,
+      backend: this.#intendedBackend()
+    });
+    const requested = this.computeMode;
+    let facts = null;
+    try {
+      facts = await this.#loadRuntime(requested, {
+        strictGpu: strictGpu && requested === 'gpu'
+      });
+    } catch (error) {
+      if (requested !== 'gpu' || strictGpu) {
+        this.#failLoad(error);
+        throw error instanceof AiEngineError
+          ? error
+          : new AiEngineError(
+              'MODEL_LOAD_FAILED',
+              this.status.error?.message ||
+                'The companion model could not be loaded. It may be missing, corrupt, or out of memory.',
+              error.message
+            );
+      }
+      const fallback = {
+        code: typeof error.code === 'string' ? error.code : 'GPU_UNAVAILABLE',
+        message: friendlyComputeError(error),
+        details: typeof error.message === 'string' ? error.message : ''
+      };
+      this.computeMode = 'cpu';
+      this.#setStatus({
+        state: 'loading',
+        computeMode: 'cpu',
+        backend: 'cpu',
+        accelerationBackend: 'cpu',
+        gpuActive: false,
+        gpuLayers: 0,
+        computeFallback: fallback
+      });
+      try {
+        facts = await this.#loadRuntime('cpu', { strictGpu: false });
+      } catch (cpuError) {
+        this.#failLoad(cpuError);
+        throw cpuError instanceof AiEngineError
+          ? cpuError
+          : new AiEngineError(
+              'MODEL_LOAD_FAILED',
+              this.status.error?.message ||
+                'The companion model could not be loaded. It may be missing, corrupt, or out of memory.',
+              cpuError.message
+            );
+      }
+      this.#finishLoad(facts, fallback);
+      this.emit('fallback', { from: 'gpu', to: 'cpu', ...fallback });
+      return;
+    }
+
+    if (requested === 'gpu' && !facts.gpuActive) {
+      const fallback = {
+        code: 'GPU_UNAVAILABLE',
+        message: friendlyComputeError({
+          code: 'GPU_UNAVAILABLE',
+          message: 'No layers could be placed on the video card.'
+        }),
+        details: `gpu=${facts.accelerationBackend}, layers=${facts.gpuLayers}`
+      };
+      this.computeMode = 'cpu';
+      this.#finishLoad(facts, fallback);
+      this.emit('fallback', { from: 'gpu', to: 'cpu', ...fallback });
+      return;
+    }
+
+    this.#finishLoad(facts, null);
+  }
+
+  #finishLoad(facts, fallback) {
+    this.backend = facts.gpuActive ? facts.accelerationBackend : 'cpu';
+    this.accelerationBackend = facts.accelerationBackend;
+    this.gpuActive = facts.gpuActive;
+    this.gpuLayers = facts.gpuLayers;
+    this.computeFallback = fallback;
+    this.#setStatus({
+      state: 'ready',
+      backend: this.backend,
+      accelerationBackend: this.accelerationBackend,
+      computeMode: this.computeMode,
+      gpuActive: this.gpuActive,
+      gpuLayers: this.gpuLayers,
+      computeFallback: fallback,
+      loadProgress: 1,
+      error: null,
+      ...this.#modelFacts()
+    });
+  }
+
+  async #loadRuntime(mode, { strictGpu = false } = {}) {
+    const nlc = this.nlc || (await import('node-llama-cpp'));
+    this.nlc = nlc;
+    const runtime = resolveRuntimeOptions(mode, process.platform, process.arch, {
+      strictGpu
+    });
     let llama = null;
     try {
-      const nlc = await import('node-llama-cpp');
-      this.nlc = nlc;
-
-      const isMac = process.platform === 'darwin';
-      const llamaOptions = {
-        gpu: isMac ? 'auto' : false,
+      llama = await nlc.getLlama({
+        gpu: runtime.gpu,
         build: 'never',
         skipDownload: true,
         logLevel: 'error',
         maxThreads: this.threads
-      };
-
-      try {
-        llama = await nlc.getLlama(llamaOptions);
-      } catch (error) {
-        if (!isMac) throw error;
-        llama = await nlc.getLlama({ ...llamaOptions, gpu: false });
-        this.#setStatus({ backend: 'cpu' });
-      }
-
+      });
       const model = await llama.loadModel({
         modelPath: this.modelPath,
+        gpuLayers: runtime.gpuLayers,
         onLoadProgress: (progress) => {
           this.#setStatus({ state: 'loading', loadProgress: progress });
         }
       });
-
+      const gpuLayers = Number(model.gpuLayers) || 0;
+      const gpuActive = Boolean(llama.gpu) && gpuLayers > 0;
+      if (strictGpu && !gpuActive) {
+        const error = new AiEngineError(
+          'GPU_UNAVAILABLE',
+          'The video card could not be used.',
+          `gpu=${llama.gpu || 'cpu'}, layers=${gpuLayers}`
+        );
+        try {
+          await llama.dispose();
+        } catch {
+          // Ignore disposal failures while reporting the original error.
+        }
+        throw error;
+      }
       this.llama = llama;
       this.model = model;
-      this.backend = llama.gpu ? String(llama.gpu) : 'cpu';
-      this.#setStatus({
-        state: 'ready',
-        backend: this.backend,
-        loadProgress: 1,
-        error: null,
-        ...this.#modelFacts()
-      });
+      return {
+        gpuActive,
+        gpuLayers,
+        accelerationBackend: llama.gpu ? String(llama.gpu) : 'cpu'
+      };
     } catch (error) {
-      if (llama) {
+      if (llama && this.llama !== llama) {
         try {
           await llama.dispose();
         } catch {
           // Ignore disposal failures while reporting the original error.
         }
       }
-      this.llama = null;
-      this.model = null;
-      const message =
-        error instanceof AiEngineError
-          ? error.message
-          : 'The companion model could not be loaded. It may be missing, corrupt, or out of memory.';
-      this.#setStatus({
-        state: 'error',
-        loadProgress: 0,
-        error: {
-          code: error.code || 'MODEL_LOAD_FAILED',
-          message
-        }
-      });
-      if (error instanceof AiEngineError) throw error;
-      throw new AiEngineError('MODEL_LOAD_FAILED', message, error.message);
+      throw error;
     }
+  }
+
+  #failLoad(error) {
+    this.llama = null;
+    this.model = null;
+    this.gpuActive = false;
+    this.gpuLayers = 0;
+    this.accelerationBackend = 'cpu';
+    const message =
+      error instanceof AiEngineError
+        ? error.message
+        : 'The companion model could not be loaded. It may be missing, corrupt, or out of memory.';
+    this.#setStatus({
+      state: 'error',
+      backend: 'cpu',
+      accelerationBackend: 'cpu',
+      gpuActive: false,
+      gpuLayers: 0,
+      loadProgress: 0,
+      error: {
+        code: error.code || 'MODEL_LOAD_FAILED',
+        message
+      }
+    });
   }
 
   #enqueue(task) {
@@ -408,16 +599,7 @@ class AiEngine extends EventEmitter {
       throw new AiEngineError('AI_DISPOSED', 'The companion is shutting down.');
     }
     this.cancelAll();
-    if (this.llama) {
-      try {
-        await this.llama.dispose();
-      } catch {
-        // Ignore; a fresh runtime will be loaded below.
-      }
-      this.llama = null;
-      this.model = null;
-      this.nlc = null;
-    }
+    await this.unload();
     this.#setStatus({ state: 'idle', error: null, loadProgress: 0 });
     await this.ensureLoaded();
     return this.getStatus();
@@ -440,7 +622,10 @@ class AiEngine extends EventEmitter {
     this.llama = null;
     this.model = null;
     this.nlc = null;
-    this.#setStatus({ state: 'disposed', loadProgress: 0 });
+    this.gpuActive = false;
+    this.gpuLayers = 0;
+    this.accelerationBackend = 'cpu';
+    this.#setStatus({ state: 'disposed', backend: 'cpu', gpuActive: false, gpuLayers: 0, loadProgress: 0 });
   }
 
   static errorPayload(error) {

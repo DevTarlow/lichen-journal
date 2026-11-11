@@ -32,8 +32,11 @@ at a time — all running on the same machine, with no accounts and no cloud.
 - **A companion, not a ghostwriter.** MiniCPM-V 4.7 1B is used only for a
   reflection question, extracted metadata, and an emotional color palette. It
   never writes into your journal body.
-- **CPU-first.** Windows and Linux run on the CPU for predictable hardware
-  support. macOS uses Metal automatically. If Metal fails, it falls back to CPU.
+- **Processor-first, video card optional.** Windows and Linux run on the
+  processor by default and can opt into video-card acceleration during first-run
+  setup or in Settings. Apple Silicon uses its graphics chip automatically and
+  can be switched to the processor. If a check fails, the companion stays on the
+  processor and says so in one plain sentence. No driver setup is required.
 - **Yours to remove.** A two-step, typed-confirmation purge clears the database
   and recreates an empty vault. Exports are plain Markdown plus JSON.
 
@@ -103,8 +106,9 @@ at a time — all running on the same machine, with no accounts and no cloud.
   Both cards are read straight from the vault and double as shortcuts back to
   those pages.
 - Preferences in Vault settings: four theme color palettes (Lichen, River,
-  Heather, Ember), the privacy page-turn on/off, and reduced motion. Choices stay
-  on this device.
+  Heather, Ember), the privacy page-turn on/off, reduced motion, and a
+  **Faster answers with my video card** switch where the platform supports it.
+  Choices stay on this device.
 - Vault settings with preferences, absolute paths, copy buttons, per-model
   download state, ZIP export, offline self-check, and vault purge.
 - Warm parchment / earthy slate / sage light theme and a forest-dark theme.
@@ -115,8 +119,9 @@ at a time — all running on the same machine, with no accounts and no cloud.
 - Windows 10/11 (x64), macOS 12+ (Intel or Apple Silicon), or Linux x64.
 - 6 GB RAM minimum; 8 GB recommended. The companion uses roughly 0.8 GB while
   loaded, and a photo read adds roughly 1.4 GB in a separate process.
-- About 0.5 GB for the application itself, plus about 2.0 GB for the downloaded
-  model files (first run or Settings).
+- About 0.6 GB for the application itself on Windows/Linux x64 (the video-card
+  runtimes add roughly 100 MB), plus about 2.0 GB for the downloaded model files
+  (first run or Settings).
 - Internet is needed once to download the models. After that, the app works
   without a connection; photo pages also need their model files downloaded.
 
@@ -144,11 +149,12 @@ npm run build            # Renderer bundle into dist/
 npm run dist:dir         # Unpacked app for the current OS
 npm run dist             # Installer/AppImage for the current OS
 npm run smoke:ai         # Direct companion smoke test (reflection + metadata + palette)
+npm run smoke:ai:gpu     # Companion smoke on a host with a working video card
 npm run smoke:ocr        # Direct OCR smoke test on tests/fixtures/ocr-journal-page.png
 npm run selftest         # Electron end-to-end vault/AI/OCR/export/purge self-test
 npm run model:verify     # Verify the three development GGUF files
-npm run ocr:runtime:fetch   # Download the pinned llama.cpp OCR runtime
-npm run ocr:runtime:verify  # Verify the OCR runtime starts
+npm run ocr:runtime:fetch   # Download the pinned processor and video-card OCR runtimes
+npm run ocr:runtime:verify  # Verify the bundled OCR runtimes start
 ```
 
 ### Model files
@@ -166,9 +172,11 @@ The download is pinned to the Hugging Face URLs and SHA-256 values in
 use. Downloads can be resumed, cancelled, or replaced with files you already
 have. Settings shows the exact paths and per-file status.
 
-The OCR `llama-mtmd-cli` runtime is the only model-adjacent component bundled;
-it lives under `vendor/llama/<platform>-<arch>/` in development and
-`<resources>/llama/` in a packaged build.
+The OCR `llama-mtmd-cli` runtimes are bundled: a processor build on every
+platform, plus a Vulkan build under `gpu/` on Windows/Linux x64. They live under
+`vendor/llama/<platform>-<arch>/` in development and `<resources>/llama/` in a
+packaged build. The companion's video-card backend is the matching prebuilt
+`node-llama-cpp` package (Vulkan on Windows/Linux x64, Metal on Apple Silicon).
 
 For development, tests, and smoke runs, the repository `models/` directory can
 be populated:
@@ -237,6 +245,15 @@ management work without any model. The companion rail and Settings keep download
 actions available, so setup can be completed later. Once the files are installed,
 the app does not use the network for normal operation.
 
+When the files are ready, the same window offers one optional question:
+**Make the companion faster?** Windows and Linux select the processor by default;
+Apple Silicon selects its graphics chip. Choosing **Use my video card** runs a
+short real check — the companion is loaded and asked for a few tokens — and only
+then is the choice saved. If the check fails, the app keeps everything on the
+processor and says so in one sentence. The choice is also available later as
+**Faster answers with my video card** in Settings. On Intel Macs and ARM
+Windows/Linux the video-card question is not shown.
+
 The downloaded files live under the app’s user-data directory:
 
 ```
@@ -258,8 +275,10 @@ opens the photo importer.
 1. Pick a day. It defaults to the page you are reading and can be changed in the
    dialog.
 2. Choose a PNG, JPEG, or WebP photo of a page.
-3. **Read this page** runs MiniCPM-OCR 1.0 on the photo. A CPU read typically
-   takes 10–30 seconds, depending on the photo and machine.
+3. **Read this page** runs MiniCPM-OCR 1.0 on the photo. A processor read
+   typically takes 10–30 seconds, depending on the photo and machine; a working
+   video card makes it faster. If the video-card read fails, that read is retried
+   on the processor automatically and the dialog says so.
 4. Review and edit the extracted text.
 5. **Add to journal** creates the day's page, or adds the text below the words
    already on that day. Existing text is never replaced.
@@ -280,9 +299,17 @@ page; columns, tables, and handwriting may need corrections.
   downloaded on first run and loaded lazily on the first AI action.
 - Context: 4096 tokens; entry text is truncated to a safe prompt budget before
   generation.
-- Backend: `getLlama({ gpu: process.platform === 'darwin' ? 'auto' : false,
-  build: 'never', skipDownload: true })`.
-- Threads: up to 8 CPU threads to balance speed and system responsiveness.
+- Accelerator: a main-process **Faster answers with my video card** preference
+  (processor by default on Windows/Linux, Metal by default on Apple Silicon).
+  Video-card mode uses the bundled Vulkan prebuilt on Windows/Linux x64 and Metal
+  on Apple Silicon. `getLlama` keeps `build: 'never'` and `skipDownload: true`;
+  no runtime is ever downloaded. A switch is saved only after a child-process
+  probe loads the real model and generates a few tokens. On failure the engine
+  reloads on the processor, saves that mode, and tells the user once.
+- Processor mode on Apple Silicon uses the Metal prebuilt with `gpuLayers: 0`, so
+  every layer stays in RAM without needing a separate CPU-only arm64 binary.
+- Threads: up to 8 CPU threads for the processor path to balance speed and system
+  responsiveness.
 - All generations are serialized. Requests can be cancelled. Reflections stream
   into the companion card and are saved in the vault when complete.
 - Reflection answers live in the same local SQLite vault, one row per answered
@@ -406,6 +433,8 @@ Unit/integration coverage includes:
 - model catalog/path precedence, multi-file download queues, resume, cancellation,
   checksum failure, and folder import;
 - OCR text cleanup, runtime arguments, page merging, and runtime path resolution;
+- performance settings, platform capabilities, probe output/timeout handling, the
+  GPU-to-processor fallback controller, and non-technical error messages;
 - after-writing overview stage completion, including the difference between a
   stored palette and a fallback tint.
 
@@ -423,10 +452,11 @@ double-confirmed purge, saving and editing a reflection answer (the answer box,
 success toast, and nested page section), deleting a page after confirmation,
 minimal writing mode, the palette accent frame, the Finish page after-writing
 overview (mood/themes/palette/final, the finished status, and Review opening step
-four with saved data), Preferences (palette, page-turn, reduced motion,
-persistence), the privacy page-turn, adding a page from a photo into a page
-that already has words, and the first-run model setup with journaling after
-“Not now.” On headless Linux CI,
+four with saved data), Preferences (palette, page-turn, reduced motion, the
+video-card switch where available, persistence), the privacy page-turn, adding a
+page from a photo into a page that already has words, the first-run model setup
+with journaling after “Not now,” and the optional performance question with the
+processor path. On headless Linux CI,
 tests launch Electron with `--no-sandbox --disable-gpu --user-data-dir=…` and
 `ELECTRON_OZONE_PLATFORM_HINT=x11`.
 
@@ -468,24 +498,27 @@ npm run dist:linux   # Linux AppImage (on Linux)
 npm run dist:mac     # macOS dmg + zip (on macOS)
 ```
 
-Artifacts appear in `release/`. `electron-builder.json` bundles only the OCR
-runtime under `vendor/llama/<os>-<arch>/`; no GGUF files are included. The
-packaged app downloads model weights on first run. Native modules are
-asar-unpacked, and user data is kept on uninstall
+Artifacts appear in `release/`. `electron-builder.json` bundles the OCR runtime
+under `vendor/llama/<platform>-<arch>/` (and its `gpu/` subfolder on Windows/Linux
+x64), plus the matching prebuilt `node-llama-cpp` backend; no GGUF files are
+included. The packaged app downloads model weights on first run. Native modules
+are asar-unpacked, and user data is kept on uninstall
 (`deleteAppDataOnUninstall: false`).
 
-The unpacked app is roughly 0.5 GB including native modules and the OCR runtime;
-the models add about 2.0 GB in user data after setup. Windows/macOS builds are
-unsigned by default: code signing/notarization is strongly recommended. See
-[docs/release.md](docs/release.md) for the release checklist, artifact checks,
-and signing notes.
+The unpacked app is roughly 0.6 GB on Windows/Linux x64 including native modules,
+the Vulkan backends, and the OCR runtimes; the models add about 2.0 GB in user
+data after setup. Windows/macOS builds are unsigned by default: code
+signing/notarization is strongly recommended. See [docs/release.md](docs/release.md)
+for the release checklist, artifact checks, and signing notes.
 
 ## Configuration reference
 
 | Variable | Purpose |
 | --- | --- |
 | `LICHEN_USER_DATA_DIR` | Test/dev override for app data. Used by E2E and packaging checks. |
-| `LICHEN_ENABLE_GPU=1` | Re-enable Chromium hardware acceleration (off by default for stability). |
+| `LICHEN_ENABLE_GPU=1` | Re-enable Chromium hardware acceleration for the interface (off by default for stability). This does not control whether the AI models use a video card; use the in-app preference for that. |
+| `LICHEN_COMPUTE_MODE=cpu\|gpu` | Test/dev override for the model accelerator. The saved in-app preference is authoritative in normal use. |
+| `LICHEN_REQUIRE_GPU=1` | Make the GPU smoke checks fail if the video card was not actually used. |
 | `LICHEN_DEVTOOLS=1` | Allow DevTools in packaged builds for debugging. |
 | `LICHEN_SELFTEST=1` | Run the packaged self-test and exit. |
 | `LICHEN_MODEL_DIR` | Test/dev override for the directory containing model files. |
@@ -520,6 +553,21 @@ Settings shows the exact model, projector, and runtime paths. A missing OCR file
 disables only the photo importer; the editor and companion still work. On Linux,
 the bundled `llama-mtmd-cli` needs its shared libraries beside it; do not copy the
 executable out of its platform directory.
+
+**“We couldn’t use your video card”**
+
+The app will keep everything on the processor; your journal, search, export and
+photo import still work. Update your graphics software, close other
+graphics-heavy apps, and try the switch again in Settings. If it still fails, use
+the processor. This is a performance choice, not a setup requirement. On Apple
+Silicon the graphics chip is the default; Intel Macs and ARM Windows/Linux do not
+show the switch.
+
+**The photo reader fell back to the processor**
+
+The read succeeded on the processor, which is the supported fallback. The dialog
+says so. The companion may still be using the video card; only that photo read
+was retried.
 
 **Model download fails, stalls, or checksum is rejected**
 Use **Retry** in the setup window or Settings. Partial downloads resume from the

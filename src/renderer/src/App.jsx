@@ -24,6 +24,7 @@ import { usePreferences } from './hooks/usePreferences.js';
 import { useAutosave } from './hooks/useAutosave.js';
 import { useCompanion } from './hooks/useCompanion.js';
 import { useModelSetup } from './hooks/useModelSetup.js';
+import { useCompute } from './hooks/useCompute.js';
 import { excerpt, mergePageText } from './lib/text.js';
 
 const MODEL_SETUP_DISMISSED_KEY = 'lichen.model-setup-dismissed';
@@ -153,6 +154,7 @@ export default function App() {
   const [minimalMode, setMinimalMode] = useState(false);
 
   const toastIdRef = useRef(0);
+  const computeNoticeRef = useRef(null);
   const selectedDateRef = useRef(selectedDate);
   const monthRef = useRef(month);
   const entryRef = useRef(entry);
@@ -273,6 +275,7 @@ export default function App() {
     onNotice: notify
   });
   const modelSetup = useModelSetup();
+  const compute = useCompute();
 
   const openModelSetup = useCallback(() => {
     setModelSetupOpen(true);
@@ -334,6 +337,25 @@ export default function App() {
     }
     if (!modelSetupDismissed) setModelSetupOpen(true);
   }, [bootState, modelSetup.status, modelSetupDismissed]);
+
+  useEffect(() => {
+    if (settingsOpen) compute.refresh();
+  }, [settingsOpen, compute.refresh]);
+
+  useEffect(() => {
+    const notice = compute.notice;
+    if (!notice || settingsOpen || modelSetupOpen) return;
+    if (computeNoticeRef.current === notice.id) return;
+    computeNoticeRef.current = notice.id;
+    notify(notice.message, 'info');
+    compute.clearNotice();
+  }, [
+    compute.notice,
+    compute.clearNotice,
+    settingsOpen,
+    modelSetupOpen,
+    notify
+  ]);
 
   const closeAnswerModal = useCallback((remember = true) => {
     const current = answerModalRef.current;
@@ -1080,6 +1102,10 @@ export default function App() {
         aiStatus={companion.status}
         aiBusy={companion.busy}
         modelStatus={modelSetup.status}
+        compute={compute.status}
+        computeBusy={compute.busy}
+        onUseCpu={compute.useCpu}
+        onTestGpu={compute.testGpu}
         onDownloadAsset={handleModelDownloadAsset}
         onCancelModel={modelSetup.cancel}
         onImportModelFile={handleModelImportFile}
@@ -1138,6 +1164,10 @@ export default function App() {
         <ModelSetupModal
           open
           status={modelSetup.status}
+          compute={compute.status}
+          computeBusy={compute.busy}
+          onUseCpu={compute.useCpu}
+          onTestGpu={compute.testGpu}
           onClose={closeModelSetup}
           onDownloadAll={modelSetup.downloadAll}
           onDownload={modelSetup.downloadAsset}

@@ -53,15 +53,16 @@ verified, report the failure instead of committing a red tree.
 | Command | What it covers | Typical use |
 | --- | --- | --- |
 | `npm run dev` | Vite on `127.0.0.1:5173` plus Electron | Inner loop |
-| `npm test` | Vitest: vault, FTS, export, purge, ritual, AI/OCR normalization, model download store | Every code change |
+| `npm test` | Vitest: vault, FTS, export, purge, ritual, AI/OCR normalization, model download store, performance settings and the GPU fallback controller | Every code change |
 | `npm run build` | Production renderer bundle in `dist/` | Every renderer/UI change |
 | `npm run test:e2e` | Playwright Electron: boot, autosave, search, mood, finish-page overview, privacy, export, offline, purge, AI, photo import, first-run model setup | Main/preload/renderer/security changes |
 | `npm run smoke:ai` | Real model reflection + metadata + palette, direct in Node | AI prompt/runtime changes |
+| `npm run smoke:ai:gpu` | Same companion smoke on a host with a working video card; fails if the GPU was not used | Video-card/runtime changes |
 | `npm run smoke:ocr` | Real MiniCPM-OCR read of the committed fixture | OCR/runtime changes |
 | `npm run selftest` | Packaged-style vault + optional companion/OCR + export + network + purge self-test | Before packaging or after main-process changes |
 | `npm run model:verify` | SHA-256 and size of the three development GGUFs | Release and dependency work |
-| `npm run ocr:runtime:fetch` | Download the pinned llama.cpp OCR runtime for this platform | Fresh checkout or packaging |
-| `npm run ocr:runtime:verify` | Start the bundled OCR runtime and verify it | Release and dependency work |
+| `npm run ocr:runtime:fetch` | Download the pinned llama.cpp OCR runtimes for this platform (processor plus the Vulkan video-card build where available) | Fresh checkout or packaging |
+| `npm run ocr:runtime:verify` | Start and verify the bundled processor and video-card OCR runtimes | Release and dependency work |
 | `npm run dist:dir` | Unpacked build for the current OS | Packaging checks |
 | `npm run dist` | Installer/AppImage for the current OS | Release artifact |
 | `npm run icons` | Regenerate `build/icon.png` from `build/icon.svg` | Branding changes |
@@ -223,10 +224,15 @@ invent credentials or rewrite the remote URL with a token.
 - **Models are downloaded, not bundled.** The app package contains no GGUF files.
   First-run setup downloads the companion and OCR weights from pinned HTTPS URLs,
   verifies size and SHA-256, and stores them in user data. The OCR
-  `llama-mtmd-cli` runtime remains bundled. `getLlama` must keep
-  `build: 'never'` and `skipDownload: true`. CPU on Windows/Linux, Metal auto on
-  macOS with CPU fallback. AI, OCR, and download failures must never block
-  journaling.
+  `llama-mtmd-cli` runtimes remain bundled: a processor build everywhere plus a
+  Vulkan build under `gpu/` on Windows/Linux x64, and Metal on macOS. `getLlama`
+  must keep `build: 'never'` and `skipDownload: true`. Windows/Linux x64 default
+  to the processor and may opt into the bundled Vulkan backend; Apple Silicon
+  defaults to Metal and may switch to the processor using the Metal build with
+  zero offloaded layers; Intel Macs and ARM Windows/Linux stay on the processor.
+  A video-card choice is saved only after the child-process probe loads the real
+  model and generates tokens; any failure falls back to the processor. AI, OCR,
+  probe, and download failures must never block journaling.
 - **Photo OCR is local and non-persistent.** It runs from the bundled llama.cpp
   `llama-mtmd-cli`, reads a temporary normalized image, and deletes it. The
   original photo and the temporary image must never enter the vault or the

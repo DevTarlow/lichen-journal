@@ -11,6 +11,7 @@ const {
   cleanOcrText,
   buildOcrArgs
 } = require('./ocr-utils');
+const { normalizeComputeMode } = require('./compute-utils');
 
 class OcrEngineError extends Error {
   constructor(code, message, details = undefined) {
@@ -26,46 +27,72 @@ class OcrEngine extends EventEmitter {
     runtimePath,
     modelPath,
     projectorPath,
+    gpuRuntimePath = '',
     threads = 8,
-    timeoutMs = DEFAULT_TIMEOUT_MS
+    timeoutMs = DEFAULT_TIMEOUT_MS,
+    computeMode = 'cpu'
   } = {}) {
     super();
     if (!runtimePath || !modelPath || !projectorPath) {
       throw new Error('OcrEngine requires runtime, model, and projector paths.');
     }
     this.runtimePath = runtimePath;
+    this.gpuRuntimePath = typeof gpuRuntimePath === 'string' ? gpuRuntimePath : '';
     this.modelPath = modelPath;
     this.projectorPath = projectorPath;
     this.threads = Math.max(1, Math.min(MAX_OCR_THREADS, Number(threads) || 1));
     this.timeoutMs = timeoutMs;
+    this.computeMode = normalizeComputeMode(computeMode);
+    this.gpuFailed = false;
     this.running = new Map();
     this.disposed = false;
     this.lastError = null;
     this.status = {
       state: 'idle',
       error: null,
+      computeMode: this.computeMode,
+      backend: this.#backend(),
       ...this.#facts()
     };
     this.#refreshState();
   }
 
+  #exists(filePath) {
+    try {
+      const stat = fs.statSync(filePath);
+      return stat.isFile() && stat.size > 0;
+    } catch {
+      return false;
+    }
+  }
+
   #facts() {
-    const exists = (filePath) => {
-      try {
-        const stat = fs.statSync(filePath);
-        return stat.isFile() && stat.size > 0;
-      } catch {
-        return false;
-      }
-    };
     return {
       runtimePath: this.runtimePath,
+      gpuRuntimePath: this.gpuRuntimePath,
       modelPath: this.modelPath,
       projectorPath: this.projectorPath,
-      runtimePresent: exists(this.runtimePath),
-      modelPresent: exists(this.modelPath),
-      projectorPresent: exists(this.projectorPath)
+      runtimePresent: this.#exists(this.runtimePath),
+      gpuRuntimePresent: Boolean(this.gpuRuntimePath) && this.#exists(this.gpuRuntimePath),
+      modelPresent: this.#exists(this.modelPath),
+      projectorPresent: this.#exists(this.projectorPath)
     };
+  }
+
+  #selectedRuntime() {
+    if (
+      this.computeMode === 'gpu' &&
+      !this.gpuFailed &&
+      this.gpuRuntimePath &&
+      this.#exists(this.gpuRuntimePath)
+    ) {
+      return { path: this.gpuRuntimePath, gpu: true };
+    }
+    return { path: this.runtimePath, gpu: false };
+  }
+
+  #backend() {
+    return this.#selectedRuntime().gpu ? 'gpu' : 'cpu';
   }
 
   #refreshState() {
@@ -82,6 +109,8 @@ class OcrEngine extends EventEmitter {
       ...this.status,
       ...facts,
       state,
+      computeMode: this.computeMode,
+      backend: this.#backend(),
       error: this.status.error
     };
     return facts;
@@ -92,11 +121,15 @@ class OcrEngine extends EventEmitter {
     return {
       state: this.status.state,
       runtimePath: this.status.runtimePath,
+      gpuRuntimePath: this.status.gpuRuntimePath,
       modelPath: this.status.modelPath,
       projectorPath: this.status.projectorPath,
       runtimePresent: this.status.runtimePresent,
+      gpuRuntimePresent: this.status.gpuRuntimePresent,
       modelPresent: this.status.modelPresent,
       projectorPresent: this.status.projectorPresent,
+      computeMode: this.status.computeMode,
+      backend: this.status.backend,
       error: this.status.error,
       busyRequestId: this.running.size ? [...this.running.keys()][0] : null
     };
@@ -105,6 +138,13 @@ class OcrEngine extends EventEmitter {
   #setStatus(patch) {
     this.status = { ...this.status, ...patch };
     this.emit('status', this.getStatus());
+  }
+
+  setComputeMode(mode) {
+    this.computeMode = normalizeComputeMode(mode);
+    this.gpuFailed = false;
+    this.#setStatus({ computeMode: this.computeMode, backend: this.#backend() });
+    return this.getStatus();
   }
 
   setModelPaths({ modelPath, projectorPath } = {}) {
@@ -128,16 +168,16 @@ class OcrEngine extends EventEmitter {
     return this.getStatus();
   }
 
-  #ensureReady() {
+  #ensureReady(selected = this.#selectedRuntime()) {
     if (this.disposed) {
       throw new OcrEngineError('OCR_DISPOSED', 'The photo reader is shutting down.');
     }
     const facts = this.#refreshState();
-    if (!facts.runtimePresent) {
+    if (!this.#exists(selected.path)) {
       throw new OcrEngineError(
         'OCR_RUNTIME_MISSING',
         'The local OCR runtime is missing from this installation.',
-        this.runtimePath
+        selected.path
       );
     }
     if (!facts.modelPresent || !facts.projectorPresent) {
@@ -150,7 +190,8 @@ class OcrEngine extends EventEmitter {
   }
 
   async recognize({ imagePath, requestId } = {}) {
-    this.#ensureReady();
+    const selected = this.#selectedRuntime();
+    this.#ensureReady(selected);
     if (!imagePath || typeof imagePath !== 'string') {
       throw new OcrEngineError('INVALID_IMAGE', 'A photo path is required.');
     }
@@ -169,11 +210,89 @@ class OcrEngine extends EventEmitter {
 
     const id = String(requestId || `${Date.now()}-${Math.random().toString(36).slice(2)}`);
     const startedAt = Date.now();
+    const state = { cancelled: false, currentCancel: null };
+    const entry = {
+      cancel: () => {
+        state.cancelled = true;
+        try {
+          state.currentCancel?.();
+        } catch {
+          // The current attempt may already have exited.
+        }
+      }
+    };
+    this.running.set(id, entry);
+    this.#setStatus({ state: 'running', error: null, backend: selected.gpu ? 'gpu' : 'cpu' });
+
+    const attempts = selected.gpu
+      ? [
+          { runtimePath: this.gpuRuntimePath, gpu: true },
+          { runtimePath: this.runtimePath, gpu: false }
+        ]
+      : [{ runtimePath: this.runtimePath, gpu: false }];
+
+    let lastError = null;
+    try {
+      for (let index = 0; index < attempts.length; index += 1) {
+        const attempt = attempts[index];
+        if (state.cancelled) {
+          throw new OcrEngineError('OCR_CANCELLED', 'Photo reading was cancelled.');
+        }
+        try {
+          const result = await this.#readOnce({
+            runtimePath: attempt.runtimePath,
+            gpu: attempt.gpu,
+            imagePath,
+            state
+          });
+          this.gpuFailed = index > 0;
+          return {
+            ...result,
+            fileName: path.basename(imagePath),
+            durationMs: Date.now() - startedAt,
+            backend: attempt.gpu ? 'gpu' : 'cpu',
+            fallback: index > 0
+          };
+        } catch (error) {
+          lastError = error;
+          const retryable =
+            attempt.gpu &&
+            !state.cancelled &&
+            error.code !== 'OCR_CANCELLED' &&
+            error.code !== 'OCR_TIMEOUT' &&
+            error.code !== 'OCR_EMPTY' &&
+            error.code !== 'OCR_TOO_LONG';
+          if (!retryable) throw error;
+        }
+      }
+      throw (
+        lastError ||
+        new OcrEngineError('OCR_FAILED', 'The local OCR model could not read this photo.')
+      );
+    } catch (error) {
+      const cancelled = error.code === 'OCR_CANCELLED';
+      this.#setStatus({
+        state: cancelled ? 'idle' : 'error',
+        error: cancelled
+          ? null
+          : { code: error.code || 'OCR_FAILED', message: error.message }
+      });
+      throw error;
+    } finally {
+      this.running.delete(id);
+      if (this.running.size === 0 && this.status.state === 'running') {
+        this.#setStatus({ state: 'idle' });
+      }
+    }
+  }
+
+  #readOnce({ runtimePath, gpu, imagePath, state }) {
     const args = buildOcrArgs({
       modelPath: this.modelPath,
       projectorPath: this.projectorPath,
       imagePath,
-      threads: this.threads
+      threads: this.threads,
+      gpu
     });
 
     return new Promise((resolve, reject) => {
@@ -186,24 +305,12 @@ class OcrEngine extends EventEmitter {
       let killTimer = null;
       let timer = null;
 
-      const entry = {};
-      this.running.set(id, entry);
-      this.#setStatus({ state: 'running', error: null });
-
       const finish = (error, result) => {
         if (settled) return;
         settled = true;
         if (killTimer) clearTimeout(killTimer);
         if (timer) clearTimeout(timer);
-        this.running.delete(id);
-        const cancelledError = error && error.code === 'OCR_CANCELLED';
-        this.#setStatus({
-          state: error && !cancelledError ? 'error' : 'idle',
-          error:
-            error && !cancelledError
-              ? { code: error.code || 'OCR_FAILED', message: error.message }
-              : null
-        });
+        state.currentCancel = null;
         if (error) reject(error);
         else resolve(result);
       };
@@ -234,15 +341,15 @@ class OcrEngine extends EventEmitter {
       }, this.timeoutMs);
       timer.unref?.();
 
-      entry.cancel = () => {
+      state.currentCancel = () => {
         cancelled = true;
         kill();
         finish(new OcrEngineError('OCR_CANCELLED', 'Photo reading was cancelled.'));
       };
 
       try {
-        child = spawn(this.runtimePath, args, {
-          cwd: path.dirname(this.runtimePath),
+        child = spawn(runtimePath, args, {
+          cwd: path.dirname(runtimePath),
           windowsHide: true,
           stdio: ['ignore', 'pipe', 'pipe']
         });
@@ -309,11 +416,7 @@ class OcrEngine extends EventEmitter {
           );
           return;
         }
-        finish(null, {
-          text,
-          fileName: path.basename(imagePath),
-          durationMs: Date.now() - startedAt
-        });
+        finish(null, { text });
       });
     });
   }
@@ -334,7 +437,7 @@ class OcrEngine extends EventEmitter {
   dispose() {
     this.disposed = true;
     this.cancelAll();
-    this.#setStatus({ state: 'disposed', error: null });
+    this.#setStatus({ state: 'disposed', error: null, backend: 'cpu' });
   }
 }
 

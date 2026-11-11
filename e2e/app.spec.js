@@ -135,6 +135,11 @@ test('settings exposes the vault, verifies offline, and double-confirms purge', 
     await expect(page.getByRole('dialog')).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Vault settings' })).toBeVisible();
 
+    if ((process.platform === 'linux' || process.platform === 'win32') && process.arch === 'x64') {
+      await expect(page.getByLabel('Faster answers with my video card')).toBeVisible();
+      await expect(page.getByText('Using the processor.')).toBeVisible();
+    }
+
     const databasePath = await page
       .locator('.path-row')
       .filter({ hasText: 'Vault database' })
@@ -191,6 +196,33 @@ test('settings exposes the vault, verifies offline, and double-confirms purge', 
 });
 
 
+test('checks the video card without exposing driver details', async () => {
+  test.setTimeout(120_000);
+  if (!((process.platform === 'linux' || process.platform === 'win32') && process.arch === 'x64')) {
+    test.skip();
+    return;
+  }
+  const userDataDir = makeUserDataDir();
+  const { app, page, errors } = await launchApp(userDataDir);
+  try {
+    await page.getByRole('button', { name: 'Open vault settings' }).click();
+    const toggle = page.getByLabel('Faster answers with my video card');
+    await expect(toggle).toBeVisible();
+    const status = page.locator('.compute-fineprint');
+    await expect(status).toContainText('Using the processor.');
+    await toggle.click();
+    await expect(status).toContainText(/Using your video card|processor/i, {
+      timeout: 90_000
+    });
+    const copy = await status.innerText();
+    expect(copy).not.toMatch(/CUDA|Vulkan|Metal|VRAM/i);
+    expect(errors).toEqual([]);
+  } finally {
+    await app.close().catch(() => {});
+    fs.rmSync(userDataDir, { recursive: true, force: true });
+  }
+});
+
 test('Finish page walks the page through the after-writing overview', async () => {
   test.setTimeout(150_000);
   const userDataDir = makeUserDataDir();
@@ -234,7 +266,7 @@ test('Finish page walks the page through the after-writing overview', async () =
     await page.locator('.companion-info').hover();
     const companionDetails = page.locator('.companion-status-tooltip');
     await expect(companionDetails).toBeVisible();
-    await expect(companionDetails).toContainText('CPU');
+    await expect(companionDetails).toContainText('Processor');
     await expect(companionDetails).toContainText(/threads/i);
     await expect(companionDetails).toContainText('Model');
 
@@ -922,6 +954,78 @@ test('adds a page from a photo without replacing existing words', async () => {
 });
 
 
+test('keeps first-run setup on the processor when the video-card check fails', async () => {
+  test.setTimeout(120_000);
+  const userDataDir = makeUserDataDir();
+  const modelDir = fs.mkdtempSync(path.join(ROOT, '.e2e-models-'));
+  const bodies = {
+    '/companion': Buffer.from('companion-model-'.repeat(200)),
+    '/ocr': Buffer.from('ocr-model-'.repeat(200)),
+    '/projector': Buffer.from('projector-'.repeat(200))
+  };
+  const { server, base } = await startModelServer(bodies);
+  const manifest = [
+    {
+      id: 'companion',
+      label: 'Companion',
+      file: 'MiniCPM-V-4_7-1B-Q4_K_M.gguf',
+      bytes: bodies['/companion'].length,
+      sha256: crypto.createHash('sha256').update(bodies['/companion']).digest('hex'),
+      url: `${base}/companion`
+    },
+    {
+      id: 'ocrModel',
+      label: 'Photo reader',
+      file: 'MiniCPM-OCR-1_0-Q4_K_M.gguf',
+      bytes: bodies['/ocr'].length,
+      sha256: crypto.createHash('sha256').update(bodies['/ocr']).digest('hex'),
+      url: `${base}/ocr`
+    },
+    {
+      id: 'ocrProjector',
+      label: 'Vision projector',
+      file: 'mmproj-model-f16-4x.gguf',
+      bytes: bodies['/projector'].length,
+      sha256: crypto.createHash('sha256').update(bodies['/projector']).digest('hex'),
+      url: `${base}/projector`
+    }
+  ];
+
+  const { app, page, errors } = await launchApp(userDataDir, {
+    LICHEN_MODEL_DIR: modelDir,
+    LICHEN_MODEL_TEST_MANIFEST: JSON.stringify(manifest)
+  });
+  try {
+    await expect(
+      page.getByRole('heading', { name: 'Set up the local model files' })
+    ).toBeVisible({ timeout: 30_000 });
+    await page.getByRole('button', { name: 'Download missing files' }).click();
+    await expect(
+      page.getByRole('heading', { name: 'The local models are ready.' })
+    ).toBeVisible({ timeout: 30_000 });
+    await page.getByRole('radio', { name: /Use my video card/ }).click();
+    await page.getByRole('button', { name: 'Continue', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Continue on the processor' })).toBeVisible({
+      timeout: 90_000
+    });
+    await expect(page.locator('.compute-status')).toContainText(/processor/i);
+    await page.getByRole('button', { name: 'Continue on the processor' }).click();
+    await expect(
+      page.getByRole('heading', { name: 'The local models are ready.' })
+    ).toHaveCount(0);
+    const settings = JSON.parse(fs.readFileSync(path.join(userDataDir, 'settings.json'), 'utf8'));
+    expect(settings.compute.mode).toBe('cpu');
+    expect(settings.compute.choiceMade).toBe(true);
+    expect(settings.compute.lastError.message).toMatch(/processor/i);
+    expect(errors).toEqual([]);
+  } finally {
+    await app.close().catch(() => {});
+    await new Promise((resolve) => server.close(resolve));
+    fs.rmSync(userDataDir, { recursive: true, force: true });
+    fs.rmSync(modelDir, { recursive: true, force: true });
+  }
+});
+
 test('offers model setup on first run and keeps journaling available', async () => {
   test.setTimeout(90_000);
   const userDataDir = makeUserDataDir();
@@ -1009,7 +1113,12 @@ test('downloads the model setup queue and installs verified files', async () => 
     expect(fs.readFileSync(path.join(modelDir, manifest[0].file))).toEqual(bodies['/companion']);
     expect(fs.readFileSync(path.join(modelDir, manifest[1].file))).toEqual(bodies['/ocr']);
     expect(fs.readFileSync(path.join(modelDir, manifest[2].file))).toEqual(bodies['/projector']);
-    await page.getByRole('button', { name: 'Done' }).click();
+
+    // The optional performance choice is the last step of first-run setup.
+    await expect(page.getByText('Make the companion faster?')).toBeVisible();
+    const processorChoice = page.getByRole('radio', { name: /Keep it on the processor/ });
+    await expect(processorChoice).toBeChecked();
+    await page.getByRole('button', { name: 'Continue', exact: true }).click();
     await expect(
       page.getByRole('heading', { name: 'The local models are ready.' })
     ).toHaveCount(0);

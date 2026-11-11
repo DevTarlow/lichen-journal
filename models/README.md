@@ -10,8 +10,10 @@ under the app's user-data directory:
 <userData>/models/mmproj-model-f16-4x.gguf
 ```
 
-The OCR `llama-mtmd-cli` runtime is bundled separately under
-`vendor/llama/<platform>-<arch>/`; it is not a model file.
+The OCR `llama-mtmd-cli` runtimes are bundled separately under
+`vendor/llama/<platform>-<arch>/`: a processor build at the root, plus a Vulkan
+build under `gpu/` on Windows/Linux x64. They are not model files. The companion
+uses the matching `node-llama-cpp` processor/Vulkan/Metal prebuilt backend.
 
 ## Companion
 

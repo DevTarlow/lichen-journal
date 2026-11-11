@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { THEME_PALETTES } from '../lib/preferences.js';
+import { backendLabel } from '../lib/compute.js';
 import ModelAssetList from './ModelAssetList.jsx';
 import {
   AlertIcon,
@@ -65,6 +66,10 @@ export default function SettingsModal({
   aiStatus,
   aiBusy,
   modelStatus,
+  compute,
+  computeBusy,
+  onUseCpu,
+  onTestGpu,
   onDownloadAsset,
   onCancelModel,
   onImportModelFile,
@@ -89,6 +94,7 @@ export default function SettingsModal({
   const [checkingOffline, setCheckingOffline] = useState(false);
   const [purgeError, setPurgeError] = useState('');
   const [exportError, setExportError] = useState('');
+  const [computeError, setComputeError] = useState('');
 
   busyRef.current = purging || exporting;
   purgeStepRef.current = purgeStep;
@@ -102,6 +108,7 @@ export default function SettingsModal({
     setLastExport('');
     setPurgeError('');
     setExportError('');
+    setComputeError('');
     const previouslyFocused = document.activeElement;
     const timer = window.setTimeout(() => {
       const first = dialogRef.current?.querySelector('button, input, [tabindex="0"]');
@@ -151,6 +158,7 @@ export default function SettingsModal({
 
   const stats = info?.stats;
   const modelBytes = aiStatus?.modelBytes ?? info?.modelBytes;
+  const accelNoun = compute?.noun === 'graphics chip' ? 'graphics chip' : 'video card';
 
   const handleCopy = async (value) => {
     if (!value) return false;
@@ -203,6 +211,15 @@ export default function SettingsModal({
       setOfflineResult({ blocked: true, detail: error.message });
     } finally {
       setCheckingOffline(false);
+    }
+  };
+
+  const handleComputeToggle = async (event) => {
+    const wantsGpu = event.target.checked;
+    setComputeError('');
+    const result = wantsGpu ? await onTestGpu() : await onUseCpu();
+    if (!result || result.ok !== true) {
+      setComputeError(result?.message || 'The performance setting could not be changed.');
     }
   };
 
@@ -321,6 +338,43 @@ export default function SettingsModal({
                 </span>
               </span>
             </label>
+
+            {compute?.canChooseGpu && compute?.modelPresent ? (
+              <>
+                <label className="preference-toggle" htmlFor="pref-video-card">
+                  <span className="preference-text">
+                    <span className="preference-label">
+                      Faster answers with my {accelNoun}
+                    </span>
+                    <span className="preference-hint">
+                      Lets the companion and photo reader use your {accelNoun}. We&apos;ll
+                      check it before turning it on. Off keeps everything on the processor.
+                    </span>
+                  </span>
+                  <span className="switch">
+                    <input
+                      id="pref-video-card"
+                      type="checkbox"
+                      checked={compute.mode === 'gpu' || Boolean(computeBusy)}
+                      disabled={Boolean(computeBusy) || Boolean(aiBusy)}
+                      onChange={handleComputeToggle}
+                    />
+                    <span className="switch-track" aria-hidden="true">
+                      <span className="switch-thumb" />
+                    </span>
+                  </span>
+                </label>
+                <p className="settings-fineprint compute-fineprint" aria-live="polite">
+                  {computeBusy
+                    ? `Checking your ${accelNoun}…`
+                    : compute.mode === 'gpu'
+                      ? `Using your ${accelNoun}.`
+                      : computeError ||
+                        compute.lastError?.message ||
+                        'Using the processor.'}
+                </p>
+              </>
+            ) : null}
           </section>
 
           <section className="settings-section" aria-labelledby="storage-heading">
@@ -382,8 +436,9 @@ export default function SettingsModal({
               </button>
             </div>
             <p className="settings-copy">
-              MiniCPM-V 4.7 1B Instruct, quantized for CPU. It is downloaded once
-              from Hugging Face and then runs from a local GGUF file.
+              MiniCPM-V 4.7 1B Instruct, downloaded once from Hugging Face and then
+              run from a local GGUF file. It uses the processor by default; the
+              video card switch in Preferences can use your {accelNoun} for faster answers.
             </p>
             <PathRow label="Model file" value={aiStatus?.modelPath || info?.modelPath} onCopy={handleCopy} />
             <ModelAssetList
@@ -401,7 +456,7 @@ export default function SettingsModal({
               <span className="status-pill">{formatBytes(modelBytes)}</span>
               <span className="status-pill">
                 {aiStatus?.state === 'ready'
-                  ? `${String(aiStatus.backend).toUpperCase()} · ${aiStatus.threads} threads`
+                  ? `${backendLabel(aiStatus.backend)} · ${aiStatus.threads} threads`
                   : String(aiStatus?.state || 'idle').toUpperCase()}
               </span>
             </div>
@@ -417,7 +472,9 @@ export default function SettingsModal({
             <p className="settings-copy">
               MiniCPM-OCR 1.0 Q4_K_M reads photos of pages with a 4× vision
               projector. The model and projector are downloaded once; the local
-              runtime ships with the app. The photo itself is never stored.
+              runtime ships with the app. Photo reading uses the same video-card
+              preference and falls back to the processor automatically. The photo
+              itself is never stored.
             </p>
             <PathRow label="OCR model" value={info?.ocrModelPath} onCopy={handleCopy} />
             <PathRow

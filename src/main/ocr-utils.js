@@ -61,10 +61,11 @@ function buildOcrArgs({
   projectorPath,
   imagePath,
   threads = 8,
+  gpu = undefined,
   platform = process.platform
 }) {
   const safeThreads = Math.max(1, Math.min(MAX_OCR_THREADS, Number(threads) || 1));
-  const metal = platform === 'darwin';
+  const useGpu = gpu === undefined ? platform === 'darwin' : Boolean(gpu);
   return [
     '-m',
     modelPath,
@@ -91,8 +92,8 @@ function buildOcrArgs({
     '--log-colors',
     'off',
     '-ngl',
-    metal ? '99' : '0',
-    metal ? '--mmproj-offload' : '--no-mmproj-offload'
+    useGpu ? '99' : '0',
+    useGpu ? '--mmproj-offload' : '--no-mmproj-offload'
   ];
 }
 
@@ -110,12 +111,17 @@ function resolveOcrPaths({
 }) {
   const binary = runtimeBinaryName(platform);
   const models = modelDir || (isPackaged ? path.join(resourcesPath, 'models') : path.join(appRoot, 'models'));
+  const runtimeDir = isPackaged
+    ? path.join(resourcesPath, 'llama')
+    : path.join(appRoot, 'vendor', 'llama', `${platform}-${arch}`);
+  const runtimePath = path.join(runtimeDir, binary);
+  const gpuRuntimePath =
+    platform === 'darwin' ? runtimePath : path.join(runtimeDir, 'gpu', binary);
   return {
     modelPath: path.join(models, 'MiniCPM-OCR-1_0-Q4_K_M.gguf'),
     projectorPath: path.join(models, 'mmproj-model-f16-4x.gguf'),
-    runtimePath: isPackaged
-      ? path.join(resourcesPath, 'llama', binary)
-      : path.join(appRoot, 'vendor', 'llama', `${platform}-${arch}`, binary)
+    runtimePath,
+    gpuRuntimePath
   };
 }
 

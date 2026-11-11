@@ -55,6 +55,12 @@ const api = {
     importFile: (assetId) => invoke('model:import-file', { assetId }),
     onStatus: (callback) => subscribe('model:status', callback)
   },
+  compute: {
+    status: () => invoke('compute:status'),
+    useCpu: () => invoke('compute:use-cpu'),
+    testGpu: () => invoke('compute:test-gpu'),
+    onChanged: (callback) => subscribe('compute:changed', callback)
+  },
   ocr: {
     status: () => invoke('ocr:status'),
     pickImage: () => invoke('ocr:pick-image'),

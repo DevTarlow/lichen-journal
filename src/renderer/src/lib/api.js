@@ -75,6 +75,12 @@ export const api = {
     importFile: (assetId) => call(() => bridge().model.importFile(assetId)),
     onStatus: (callback) => bridge().model.onStatus(callback)
   },
+  compute: {
+    status: () => call(() => bridge().compute.status()),
+    useCpu: () => call(() => bridge().compute.useCpu()),
+    testGpu: () => call(() => bridge().compute.testGpu()),
+    onChanged: (callback) => bridge().compute.onChanged(callback)
+  },
   ocr: {
     status: () => call(() => bridge().ocr.status()),
     pickImage: () => call(() => bridge().ocr.pickImage()),

@@ -7,7 +7,10 @@ release page or the itch.io project.
 ## Build matrix
 
 Build on the target OS. `node-llama-cpp` does not support cross-compiling its
-native binaries.
+native binaries. `npm ci` installs the matching optional backend package for the
+target; the build includes `@node-llama-cpp/<os>-<arch>`, plus `-vulkan` on
+Windows/Linux x64 and `-metal` on macOS arm64. Do not add the large `-cuda` or
+`-cuda-ext` packages to the default build.
 
 | Target | Command | Typical artifact |
 | --- | --- | --- |
@@ -15,25 +18,36 @@ native binaries.
 | Linux | `npm run dist:linux` | `release/*Linux-x86_64.AppImage` |
 | macOS | `npm run dist:mac` | `release/*macOS-*.dmg`, `*.zip` |
 
-The packaged app contains no GGUF model files. It bundles only the OCR runtime
-under `resources/llama/`; model weights are downloaded on first run.
+The packaged app contains no GGUF model files. It bundles the processor OCR
+runtime under `resources/llama/` and, on Windows/Linux x64, a Vulkan OCR runtime
+under `resources/llama/gpu/`; model weights are downloaded on first run. It also
+bundles the matching `node-llama-cpp` prebuilt backend: Vulkan on Windows/Linux
+x64 and Metal on macOS arm64. `electron-builder.json` deliberately uses
+`${platform}` (win32/darwin/linux) for the OCR vendor directory and `${os}`
+(win/mac/linux) for the `@node-llama-cpp` package names.
 
 ## Pre-release checks
 
 1. `npm test`
 2. `npm run build`
 3. `xvfb-run -a env ELECTRON_OZONE_PLATFORM_HINT=x11 npm run test:e2e` (Linux)
-4. `npm run ocr:runtime:verify`
+4. `npm run ocr:runtime:verify` (must verify both the processor runtime and the
+   Vulkan runtime where the platform has one)
 5. `npm run smoke:ai` and `npm run smoke:ocr` (development models required)
-6. `npm run dist:dir`
-7. Confirm the packaged `resources/` contains no `.gguf` files and does contain
-   the OCR runtime.
-8. Run the packaged self-test twice:
+6. On a host with a working video card, `npm run smoke:ai:gpu` and a
+   `LICHEN_COMPUTE_MODE=gpu npm run smoke:ocr`; confirm the video card was used
+   or the app fell back cleanly.
+7. `npm run dist:dir`
+8. Confirm the packaged `resources/` contains no `.gguf` files, contains the OCR
+   processor runtime, contains `llama/gpu/` on Windows/Linux x64, and contains
+   the matching `@node-llama-cpp/*-vulkan` or `*-metal` prebuilt backend under
+   `app.asar.unpacked`.
+9. Run the packaged self-test twice:
    - without model files, to confirm the app handles the missing-model state;
    - with `LICHEN_MODEL_DIR="$PWD/models"`, to exercise AI and OCR.
-9. Install on a clean user account, write an entry, import a page photo, export a
-   ZIP, and purge the vault.
-10. For itch.io, upload the platform artifact, set the project page and
+10. Install on a clean user account, write an entry, import a page photo, export a
+    ZIP, purge the vault, and try the Performance switch.
+11. For itch.io, upload the platform artifact, set the project page and
     screenshots, and state that model weights download on first run.
 
 ## Signing and distribution

@@ -20,6 +20,7 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "smoke:ai": "node scripts/smoke-ai.mjs",
+    "smoke:ai:gpu": "cross-env LICHEN_COMPUTE_MODE=gpu LICHEN_REQUIRE_GPU=1 node scripts/smoke-ai.mjs",
     "smoke:ocr": "node scripts/smoke-ocr.mjs",
     "selftest": "cross-env LICHEN_SELFTEST=1 electron .",
     "model:fetch": "node scripts/fetch-model.mjs",

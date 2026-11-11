@@ -112,7 +112,7 @@ async function runSelftest({ vault, ai, ocr, modelStore, appVersion }) {
 
   if (companionReady) {
     phaseStart = performance.now();
-    console.error('[selftest] loading companion model (CPU-first)…');
+    console.error('[selftest] loading companion model…');
     await ai.ensureLoaded();
     timings.modelLoadMs = Math.round(performance.now() - phaseStart);
     assert(ai.getStatus().state === 'ready', 'companion model loaded', ai.getStatus().backend);
@@ -220,6 +220,10 @@ async function runSelftest({ vault, ai, ocr, modelStore, appVersion }) {
           path: aiStatus.modelPath,
           bytes: modelStat ? modelStat.size : 0,
           backend: ai.getStatus().backend,
+          computeMode: ai.getStatus().computeMode,
+          gpuActive: ai.getStatus().gpuActive,
+          gpuLayers: ai.getStatus().gpuLayers,
+          computeFallback: ai.getStatus().computeFallback,
           threads: ai.getStatus().threads
         }
       : null,

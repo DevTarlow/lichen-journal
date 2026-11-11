@@ -7,7 +7,13 @@ export const OCR_RUNTIME_MANIFEST = Object.freeze({
     archive: 'llama-b11901-bin-ubuntu-x64.tar.gz',
     bytes: 22496063,
     sha256: '7c15e703cf4589e90371b51de0ed6ff1107df63b5f86e8d3c396019388be1fa8',
-    url: 'https://github.com/ggml-org/llama.cpp/releases/download/b11901/llama-b11901-bin-ubuntu-x64.tar.gz'
+    url: 'https://github.com/ggml-org/llama.cpp/releases/download/b11901/llama-b11901-bin-ubuntu-x64.tar.gz',
+    gpu: {
+      archive: 'llama-b11901-bin-ubuntu-vulkan-x64.tar.gz',
+      bytes: 35162311,
+      sha256: 'a11d56ec232dec8d4611ba5b93412ab50c363255ab2fb4b005bb1d3499956c24',
+      url: 'https://github.com/ggml-org/llama.cpp/releases/download/b11901/llama-b11901-bin-ubuntu-vulkan-x64.tar.gz'
+    }
   },
   'linux-arm64': {
     archive: 'llama-b11901-bin-ubuntu-arm64.tar.gz',
@@ -31,7 +37,13 @@ export const OCR_RUNTIME_MANIFEST = Object.freeze({
     archive: 'llama-b11901-bin-win-cpu-x64.zip',
     bytes: 24228082,
     sha256: '039951745399d7c1228b1e882d6e41b24d393f1795e3a6e176162bfb8193500a',
-    url: 'https://github.com/ggml-org/llama.cpp/releases/download/b11901/llama-b11901-bin-win-cpu-x64.zip'
+    url: 'https://github.com/ggml-org/llama.cpp/releases/download/b11901/llama-b11901-bin-win-cpu-x64.zip',
+    gpu: {
+      archive: 'llama-b11901-bin-win-vulkan-x64.zip',
+      bytes: 37052720,
+      sha256: '6e3a253f45117d1aec2adb2de0699ded0f6dccb683a798802d9e0dabae291f2c',
+      url: 'https://github.com/ggml-org/llama.cpp/releases/download/b11901/llama-b11901-bin-win-vulkan-x64.zip'
+    }
   },
   'win32-arm64': {
     archive: 'llama-b11901-bin-win-cpu-arm64.zip',

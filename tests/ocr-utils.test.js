@@ -55,7 +55,7 @@ describe('OCR runtime arguments', () => {
   };
 
   it('uses the jinja chat template and image prompt without suppressing stdout', () => {
-    const args = buildOcrArgs({ ...base, platform: 'linux' });
+    const args = buildOcrArgs({ ...base, platform: 'linux', gpu: false });
     expect(args).toContain('--jinja');
     expect(args).toContain('--image');
     expect(args).toContain('Text Recognition:');
@@ -63,9 +63,19 @@ describe('OCR runtime arguments', () => {
     expect(args).toEqual(expect.arrayContaining(['-ngl', '0', '--no-mmproj-offload']));
   });
 
-  it('opts into Metal and projector offload on macOS', () => {
+  it('opts into Metal and projector offload on macOS by default', () => {
     const args = buildOcrArgs({ ...base, platform: 'darwin' });
     expect(args).toEqual(expect.arrayContaining(['-ngl', '99', '--mmproj-offload']));
+  });
+
+  it('uses the video card on Windows/Linux when requested', () => {
+    const args = buildOcrArgs({ ...base, platform: 'linux', gpu: true });
+    expect(args).toEqual(expect.arrayContaining(['-ngl', '99', '--mmproj-offload']));
+  });
+
+  it('can force the processor on macOS', () => {
+    const args = buildOcrArgs({ ...base, platform: 'darwin', gpu: false });
+    expect(args).toEqual(expect.arrayContaining(['-ngl', '0', '--no-mmproj-offload']));
   });
 });
 
@@ -79,6 +89,7 @@ describe('OCR path and image helpers', () => {
       arch: 'x64'
     });
     expect(packaged.runtimePath).toBe('/app/resources/llama/llama-mtmd-cli');
+    expect(packaged.gpuRuntimePath).toBe('/app/resources/llama/gpu/llama-mtmd-cli');
     expect(packaged.modelPath).toBe('/app/resources/models/MiniCPM-OCR-1_0-Q4_K_M.gguf');
 
     const dev = resolveOcrPaths({
@@ -88,6 +99,16 @@ describe('OCR path and image helpers', () => {
       arch: 'x64'
     });
     expect(dev.runtimePath).toBe('/repo/vendor/llama/win32-x64/llama-mtmd-cli.exe');
+    expect(dev.gpuRuntimePath).toBe('/repo/vendor/llama/win32-x64/gpu/llama-mtmd-cli.exe');
+
+    const mac = resolveOcrPaths({
+      isPackaged: false,
+      appRoot: '/repo',
+      platform: 'darwin',
+      arch: 'arm64'
+    });
+    expect(mac.runtimePath).toBe('/repo/vendor/llama/darwin-arm64/llama-mtmd-cli');
+    expect(mac.gpuRuntimePath).toBe(mac.runtimePath);
 
     const downloaded = resolveOcrPaths({
       isPackaged: true,

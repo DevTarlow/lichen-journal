@@ -19,6 +19,10 @@ const {
 const { Vault, VaultError } = require('./db');
 const { AiEngine, AiEngineError } = require('./ai');
 const { OcrEngine, OcrEngineError } = require('./ocr');
+const { AppSettings } = require('./app-settings');
+const { ComputeController } = require('./compute');
+const { ComputeError, computeCapabilities } = require('./compute-utils');
+const { runGpuProbe } = require('./compute-probe');
 const {
   MAX_IMAGE_BYTES,
   MAX_OCR_TEXT_CHARS,
@@ -90,6 +94,8 @@ let vault = null;
 let ai = null;
 let ocr = null;
 let modelStore = null;
+let settingsStore = null;
+let compute = null;
 const pendingImages = new Map();
 const tempOcrImages = new Set();
 let allowClose = false;
@@ -128,7 +134,8 @@ function serializeError(error) {
     error instanceof VaultError ||
     error instanceof AiEngineError ||
     error instanceof OcrEngineError ||
-    error instanceof ModelManagerError
+    error instanceof ModelManagerError ||
+    error instanceof ComputeError
   ) {
     return {
       code: error.code || 'ERROR',
@@ -253,6 +260,7 @@ function fullVaultInfo() {
     ...info,
     userDataPath: app.getPath('userData'),
     appVersion: app.getVersion(),
+    compute: compute ? compute.getStatus() : null,
     ...modelFacts(),
     ...ocrFacts()
   };
@@ -298,6 +306,7 @@ function registerIpc() {
     userDataPath: app.getPath('userData'),
     dbPath: vault.dbPath,
     vaultDir: vault.vaultDir,
+    compute: compute ? compute.getStatus() : null,
     ...modelFacts(),
     aiStatus: ai.getStatus(),
     stats: vault.getStats(),
@@ -427,11 +436,26 @@ function registerIpc() {
 
   handle('ai:status', async () => ai.getStatus());
 
-  handle('ai:reload', async () => ai.reload());
+  handle('ai:reload', async () => {
+    if (compute) compute.apply();
+    return ai.reload();
+  });
 
   handle('ai:cancel', async ({ requestId }) => ({
     cancelled: ai.cancel(requireRequestId(requestId))
   }));
+
+  handle('compute:status', async () => (compute ? compute.getStatus() : null));
+
+  handle('compute:use-cpu', async () => {
+    if (!compute) throw new ComputeError('COMPUTE_UNAVAILABLE', 'The accelerator is unavailable.');
+    return compute.useCpu();
+  });
+
+  handle('compute:test-gpu', async () => {
+    if (!compute) throw new ComputeError('COMPUTE_UNAVAILABLE', 'The accelerator is unavailable.');
+    return compute.testGpu();
+  });
 
   handle('ai:reflect', async ({ date, text, requestId, lens, carry }) => {
     const safeDate = requireDate(date);
@@ -846,6 +870,7 @@ function syncModelPaths() {
       // An in-flight OCR read keeps the old paths until it finishes.
     }
   }
+  if (compute) broadcast('compute:changed', compute.getStatus());
 }
 
 function initJournal() {
@@ -858,13 +883,39 @@ function initJournal() {
     assets: catalogAssets
   });
   modelStore.on('status', (status) => broadcast('model:status', status));
+  settingsStore = new AppSettings({
+    filePath: path.join(app.getPath('userData'), 'settings.json'),
+    platform: process.platform,
+    arch: process.arch
+  });
+  const capabilities = computeCapabilities(process.platform, process.arch);
+  const rawOverride = process.env.LICHEN_COMPUTE_MODE;
+  const overrideMode = rawOverride === 'gpu' || rawOverride === 'cpu' ? rawOverride : null;
+  const storedMode = settingsStore.get().compute.mode;
+  const initialMode = overrideMode || (capabilities.canChooseGpu ? storedMode : capabilities.fixedMode);
   ai = new AiEngine({
     modelPath: modelStore.getActivePath('companion'),
-    appVersion: app.getVersion()
+    appVersion: app.getVersion(),
+    computeMode: initialMode
   });
   ai.on('status', (status) => broadcast('ai:status', status));
-  ocr = new OcrEngine({ ...getOcrPaths(), threads: ai.threads });
+  ocr = new OcrEngine({
+    ...getOcrPaths(),
+    threads: ai.threads,
+    computeMode: initialMode
+  });
   ocr.on('status', (status) => broadcast('ocr:status', status));
+  compute = new ComputeController({
+    settings: settingsStore,
+    ai,
+    ocr,
+    probe: runGpuProbe,
+    platform: process.platform,
+    arch: process.arch,
+    overrideMode
+  });
+  compute.on('changed', (status) => broadcast('compute:changed', status));
+  compute.apply();
 }
 
 function removeSelftestTempDir() {
@@ -878,6 +929,11 @@ function removeSelftestTempDir() {
 }
 
 async function cleanup() {
+  try {
+    if (compute) compute.dispose();
+  } catch (error) {
+    console.error('[lichen] compute cleanup failed:', error.message);
+  }
   try {
     if (modelStore) modelStore.dispose();
   } catch (error) {

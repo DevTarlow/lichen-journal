@@ -15,7 +15,7 @@ Their licenses remain in effect.
 | better-sqlite3 | 13.x | MIT | https://github.com/WiseLibs/better-sqlite3 |
 | SQLite | 3.x | Public domain | https://sqlite.org/ |
 | node-llama-cpp | 3.22.x | MIT | https://github.com/withcatai/node-llama-cpp |
-| llama.cpp | node-llama-cpp bundled build + b11901 OCR runtime | MIT | https://github.com/ggml-org/llama.cpp |
+| llama.cpp | node-llama-cpp bundled processor/Vulkan/Metal builds + b11901 processor/Vulkan/Metal OCR runtimes | MIT | https://github.com/ggml-org/llama.cpp |
 | archiver | 7.x | MIT | https://github.com/archiverjs/node-archiver |
 | MiniCPM-V 4.7 1B | Q4_K_M GGUF (downloaded) | Apache-2.0 | https://huggingface.co/openbmb/MiniCPM-V-4.7-1B |
 | MiniCPM-V 4.7 GGUF quantization | Q4_K_M (downloaded) | Apache-2.0 | https://huggingface.co/openbmb/MiniCPM-V-4.7-1B-gguf |
@@ -35,8 +35,9 @@ Model card and limitations:
 https://huggingface.co/openbmb/MiniCPM-V-4.7-1B
 
 MiniCPM-OCR 1.0 was developed by OpenBMB and is also Apache-2.0. Its model and
-projector are downloaded by the user; the bundled OCR runtime is llama.cpp
-b11901, MIT licensed, used only for local photo OCR.
+projector are downloaded by the user; the bundled OCR runtimes are llama.cpp
+b11901 processor builds plus Vulkan builds on Windows/Linux x64, all MIT
+licensed, used only for local photo OCR.
 See <https://huggingface.co/openbmb/MiniCPM-OCR-1.0> and
 <https://github.com/ggml-org/llama.cpp>.
 

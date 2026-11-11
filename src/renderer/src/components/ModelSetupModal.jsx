@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import ModelAssetList from './ModelAssetList.jsx';
-import { AlertIcon, LockIcon, XIcon } from './Icons.jsx';
+import { AlertIcon, CheckIcon, LockIcon, XIcon } from './Icons.jsx';
 
 function formatBytes(bytes) {
   const value = Number(bytes) || 0;
@@ -12,6 +12,10 @@ function formatBytes(bytes) {
 export default function ModelSetupModal({
   open,
   status,
+  compute,
+  computeBusy = false,
+  onUseCpu,
+  onTestGpu,
   onClose,
   onDownloadAll,
   onDownload,
@@ -24,9 +28,20 @@ export default function ModelSetupModal({
   const onCloseRef = useRef(onClose);
   const closeRef = useRef(null);
   const [actionError, setActionError] = useState('');
+  const [computeChoice, setComputeChoice] = useState(null);
 
-  const busy = Boolean(status?.busy || status?.downloading);
+  const allReady = Boolean(status?.allReady);
+  const modelBusy = Boolean(status?.busy || status?.downloading);
+  const busy = modelBusy || computeBusy;
+  const needsComputeChoice =
+    allReady && Boolean(compute?.canChooseGpu) && !compute?.choiceMade;
+  const accelNoun = compute?.noun === 'graphics chip' ? 'graphics chip' : 'video card';
   onCloseRef.current = onClose;
+
+  useEffect(() => {
+    if (!needsComputeChoice) return;
+    setComputeChoice((current) => current ?? (compute?.mode === 'gpu' ? 'gpu' : 'cpu'));
+  }, [needsComputeChoice, compute?.mode]);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -80,23 +95,86 @@ export default function ModelSetupModal({
   }, []);
 
   const close = useCallback(async () => {
-    if (busy && onCancel) {
+    if (computeBusy) return;
+    if (modelBusy && onCancel) {
       try {
         await onCancel();
       } catch {
         // Closing must not be blocked by a cancellation failure.
       }
     }
+    if (allReady && compute?.canChooseGpu && !compute?.choiceMade && onUseCpu) {
+      const result = await onUseCpu().catch(() => null);
+      if (result && result.ok === false) {
+        setActionError(result.message || 'The performance setting could not be saved.');
+        return;
+      }
+    }
     onCloseRef.current();
-  }, [busy, onCancel]);
+  }, [
+    allReady,
+    compute?.canChooseGpu,
+    compute?.choiceMade,
+    computeBusy,
+    modelBusy,
+    onCancel,
+    onUseCpu
+  ]);
   closeRef.current = close;
+
+  const handlePrimary = useCallback(async () => {
+    setActionError('');
+    if (!allReady) {
+      await run(() => onDownloadAll());
+      return;
+    }
+    if (needsComputeChoice) {
+      if (computeChoice === 'gpu') {
+        const result = onTestGpu
+          ? await onTestGpu().catch((error) => ({ ok: false, message: error.message }))
+          : { ok: false, message: 'The video card check is unavailable.' };
+        if (!result || result.ok !== true) {
+          if (!result?.status) {
+            setActionError(result?.message || 'The video card could not be used.');
+          }
+        }
+        return;
+      }
+      const result = onUseCpu ? await onUseCpu().catch(() => null) : null;
+      if (result && result.ok === false) {
+        setActionError(result.message || 'The performance setting could not be saved.');
+        return;
+      }
+      onCloseRef.current();
+      return;
+    }
+    onCloseRef.current();
+  }, [
+    allReady,
+    computeChoice,
+    needsComputeChoice,
+    onDownloadAll,
+    onTestGpu,
+    onUseCpu,
+    run
+  ]);
 
   if (!open) return null;
 
   const assets = status?.assets ? Object.values(status.assets) : [];
   const missing = assets.filter((asset) => asset.state !== 'ready');
   const progress = Math.max(0, Math.min(100, Number(status?.progress) || 0));
-  const allReady = Boolean(status?.allReady);
+  const primaryLabel = !allReady
+    ? modelBusy
+      ? 'Downloading…'
+      : 'Download missing files'
+    : computeBusy
+      ? 'Checking…'
+      : needsComputeChoice
+        ? 'Continue'
+        : compute?.choiceMade && compute.mode === 'cpu' && compute.lastError
+          ? 'Continue on the processor'
+          : 'Done';
 
   return (
     <div
@@ -124,6 +202,7 @@ export default function ModelSetupModal({
             className="icon-button"
             onClick={close}
             aria-label="Close model setup"
+            disabled={computeBusy}
           >
             <XIcon size={18} />
           </button>
@@ -135,10 +214,79 @@ export default function ModelSetupModal({
               Checking model files…
             </p>
           ) : allReady ? (
-            <div className="model-setup-ready" role="status">
-              <strong>Everything is installed.</strong>
-              <p>Reflections and photo pages now run entirely on this machine.</p>
-            </div>
+            <>
+              <div className="model-setup-ready" role="status">
+                <strong>Everything is installed.</strong>
+                <p>Reflections and photo pages now run entirely on this machine.</p>
+              </div>
+
+              {needsComputeChoice ? (
+                <section className="compute-choice" aria-labelledby="compute-choice-title">
+                  <h3 className="compute-choice-title" id="compute-choice-title">
+                    Make the companion faster?
+                  </h3>
+                  <p className="settings-copy">
+                    Use your {accelNoun} for quicker answers and photo reading. We&apos;ll
+                    check it once before turning it on.
+                  </p>
+                  <div className="compute-options" role="radiogroup" aria-label="Performance choice">
+                    <label
+                      className={`compute-option ${computeChoice === 'gpu' ? 'is-selected' : ''}`}
+                    >
+                      <input
+                        type="radio"
+                        name="compute-choice"
+                        value="gpu"
+                        checked={computeChoice === 'gpu'}
+                        onChange={() => setComputeChoice('gpu')}
+                        disabled={computeBusy}
+                      />
+                      <span className="compute-option-copy">
+                        <strong>Use my {accelNoun}</strong>
+                        <span>Faster answers and photo reading</span>
+                      </span>
+                      {computeChoice === 'gpu' ? (
+                        <CheckIcon size={14} className="compute-option-check" />
+                      ) : null}
+                    </label>
+                    <label
+                      className={`compute-option ${computeChoice === 'cpu' ? 'is-selected' : ''}`}
+                    >
+                      <input
+                        type="radio"
+                        name="compute-choice"
+                        value="cpu"
+                        checked={computeChoice === 'cpu'}
+                        onChange={() => setComputeChoice('cpu')}
+                        disabled={computeBusy}
+                      />
+                      <span className="compute-option-copy">
+                        <strong>Keep it on the processor</strong>
+                        <span>Works on almost every computer</span>
+                      </span>
+                      {computeChoice === 'cpu' ? (
+                        <CheckIcon size={14} className="compute-option-check" />
+                      ) : null}
+                    </label>
+                  </div>
+                  <p className="settings-fineprint">
+                    You can change this later in Settings. If the check doesn&apos;t work,
+                    we&apos;ll keep everything on the processor.
+                  </p>
+                </section>
+              ) : null}
+
+              {allReady && compute?.choiceMade ? (
+                <p
+                  className={`compute-status ${compute.mode === 'gpu' ? 'is-ok' : ''}`}
+                  aria-live="polite"
+                >
+                  {compute.mode === 'gpu'
+                    ? `Using your ${accelNoun} for faster answers.`
+                    : compute.lastError?.message || 'Using the processor.'}
+                </p>
+              ) : null}
+            </>
           ) : (
             <>
               <p className="settings-copy model-setup-intro">
@@ -210,20 +358,25 @@ export default function ModelSetupModal({
             >
               Use files I already have
             </button>
-            <button type="button" className="button button-quiet" onClick={close}>
-              {busy ? 'Cancel download' : allReady ? 'Done' : 'Not now'}
-            </button>
-            {!allReady ? (
+            {!allReady || needsComputeChoice ? (
               <button
-                ref={primaryRef}
                 type="button"
-                className="button button-primary"
-                onClick={() => run(() => onDownloadAll())}
-                disabled={busy || !missing.length}
+                className="button button-quiet"
+                onClick={close}
+                disabled={computeBusy}
               >
-                {busy ? 'Downloading…' : 'Download missing files'}
+                {!allReady && modelBusy ? 'Cancel download' : 'Not now'}
               </button>
             ) : null}
+            <button
+              ref={primaryRef}
+              type="button"
+              className="button button-primary"
+              onClick={handlePrimary}
+              disabled={computeBusy || (!allReady && (modelBusy || !missing.length))}
+            >
+              {primaryLabel}
+            </button>
           </div>
         </footer>
       </div>
