@@ -1,0 +1,99 @@
+{
+  "appId": "io.lichen.journal",
+  "productName": "Lichen Journal",
+  "copyright": "Copyright \u00a9 2026 Lichen Journal",
+  "asar": true,
+  "compression": "normal",
+  "directories": {
+    "output": "release",
+    "buildResources": "build"
+  },
+  "files": [
+    "dist/**/*",
+    "src/main/**/*",
+    "LICENSE",
+    "package.json",
+    "THIRD_PARTY_NOTICES.md",
+    "README.md",
+    "!**/*.map",
+    "!node_modules/node-llama-cpp/bins/**/*",
+    "node_modules/node-llama-cpp/bins/${os}-${arch}*/**/*",
+    "!node_modules/node-llama-cpp/llama/localBuilds/**/*",
+    "node_modules/node-llama-cpp/llama/localBuilds/${os}-${arch}*/**/*",
+    "!node_modules/@node-llama-cpp/*/bins/**/*",
+    "node_modules/@node-llama-cpp/${os}-${arch}/bins/**/*"
+  ],
+  "extraResources": [
+    {
+      "from": "vendor/llama/${os}-${arch}",
+      "to": "llama",
+      "filter": [
+        "**/*"
+      ]
+    }
+  ],
+  "asarUnpack": [
+    "node_modules/better-sqlite3/**",
+    "node_modules/node-llama-cpp/**",
+    "node_modules/@node-llama-cpp/**"
+  ],
+  "electronLanguages": [
+    "en-US"
+  ],
+  "win": {
+    "target": [
+      {
+        "target": "nsis",
+        "arch": [
+          "x64"
+        ]
+      }
+    ],
+    "icon": "build/icon.png",
+    "artifactName": "Lichen-Journal-${version}-Windows-${arch}.${ext}"
+  },
+  "nsis": {
+    "oneClick": false,
+    "perMachine": false,
+    "allowToChangeInstallationDirectory": true,
+    "createDesktopShortcut": true,
+    "deleteAppDataOnUninstall": false,
+    "artifactName": "Lichen-Journal-${version}-Windows-Setup.${ext}"
+  },
+  "linux": {
+    "target": [
+      {
+        "target": "AppImage",
+        "arch": [
+          "x64"
+        ]
+      }
+    ],
+    "category": "Office",
+    "icon": "build/icon.png",
+    "artifactName": "Lichen-Journal-${version}-Linux-${arch}.${ext}"
+  },
+  "mac": {
+    "target": [
+      {
+        "target": "dmg",
+        "arch": [
+          "x64",
+          "arm64"
+        ]
+      },
+      {
+        "target": "zip",
+        "arch": [
+          "x64",
+          "arm64"
+        ]
+      }
+    ],
+    "category": "public.app-category.productivity",
+    "icon": "build/icon.png",
+    "artifactName": "Lichen-Journal-${version}-macOS-${arch}.${ext}"
+  },
+  "publish": null,
+  "npmRebuild": false
+}

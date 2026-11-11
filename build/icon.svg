@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <rect width="1024" height="1024" rx="224" fill="#f3eee1"/>
+  <circle cx="512" cy="512" r="356" fill="#4f6b52"/>
+  <circle cx="512" cy="512" r="332" fill="none" stroke="#8fa583" stroke-width="3" opacity="0.45"/>
+  <g fill="#dce4d4">
+    <ellipse cx="512" cy="334" rx="100" ry="184" transform="rotate(0 512 512)" opacity="0.26"/>
+    <ellipse cx="512" cy="334" rx="100" ry="184" transform="rotate(45 512 512)" opacity="0.17"/>
+    <ellipse cx="512" cy="334" rx="100" ry="184" transform="rotate(90 512 512)" opacity="0.26"/>
+    <ellipse cx="512" cy="334" rx="100" ry="184" transform="rotate(135 512 512)" opacity="0.17"/>
+    <ellipse cx="512" cy="334" rx="100" ry="184" transform="rotate(180 512 512)" opacity="0.26"/>
+    <ellipse cx="512" cy="334" rx="100" ry="184" transform="rotate(225 512 512)" opacity="0.17"/>
+    <ellipse cx="512" cy="334" rx="100" ry="184" transform="rotate(270 512 512)" opacity="0.26"/>
+    <ellipse cx="512" cy="334" rx="100" ry="184" transform="rotate(315 512 512)" opacity="0.17"/>
+  </g>
+  <circle cx="512" cy="512" r="112" fill="#f3eee1"/>
+  <circle cx="512" cy="512" r="58" fill="#4f6b52"/>
+</svg>
