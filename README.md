@@ -62,7 +62,7 @@ at a time — all running on the same machine, with no accounts and no cloud.
   with the saved reading, without re-running the companion; **Read again** on the
   overview is the explicit opt-in to re-analyze the page. Switch back at any
   time; the overview stays ready until the page changes.
-- A privacy page-turn: when the pointer leaves the center page, when you pause
+- Privacy page-turn: when the pointer leaves the center page, when you pause
   with the caret still in the editor, or when the app loses focus, the entry
   turns over to a resting cover. Hover, focus, or type to turn it back. This is
   a visual cover, not encryption or a password lock, and it can be switched off
@@ -92,16 +92,16 @@ at a time — all running on the same machine, with no accounts and no cloud.
   - When a question arrives, a gentle answer box opens. Saved answers are nested
     at the bottom of that page with a toast confirmation; you can reopen and edit
     one later, and asking again keeps earlier answered questions intact.
-- A **This page** card in the rail keeps the current page's palette, mood, emotion
+- The **This page** card in the rail keeps the current page's palette, mood, emotion
   and themes in view. Mood can be nudged with quiet − and + steppers, and the
   theme chips filter the journal the same way the sidebar does. When the
   companion grounded its reading in specific lines, they appear as short quoted
   anchors under *Lines*. Whatever the companion has not read yet says *Not read
   yet* rather than guessing, and a reading that fell back to local values says so
   and offers **Read again**. A tint chosen locally is labelled *local tint*.
-- A saved palette frames the page with a full accent border and a stronger
+- Saved palettes frame the page with a full accent border and a stronger
   ambient glow, so even pale tints remain visible.
-- A **Journal** card shows the last three weeks as mood-colored ticks, with dashes
+- The **Journal** card shows the last three weeks as mood-colored ticks, with dashes
   where nothing was written, and surfaces the pages from a month and a year ago.
   Both cards are read straight from the vault and double as shortcuts back to
   those pages.
@@ -262,8 +262,8 @@ macOS:   ~/Library/Application Support/Lichen Journal/models/
 Linux:   ${XDG_CONFIG_HOME:-~/.config}/Lichen Journal/models/
 ```
 
-A file already present from an older bundled build or a development checkout is
-used directly; it is not downloaded again.
+Files already present from an older bundled build or a development checkout are
+used directly; they are not downloaded again.
 
 ![First-run model setup](screenshots/lichen-model-setup.png)
 
@@ -315,10 +315,10 @@ page; columns, tables, and handwriting may need corrections.
 - Reflection answers live in the same local SQLite vault, one row per answered
   question. Saving an answer never edits the entry body, and editing an answer
   updates it in place.
-- A reflection angle is appended to the fixed system prompt as a stance for where
+- Each reflection angle is appended to the fixed system prompt as a stance for where
   the model should look; the base rules (one question, no advice, no
   interpretation) are unchanged. An unknown angle falls back to gentle.
-- A carried question is passed as a quoted previous question and capped at 400
+- Carried questions are passed as a quoted previous question and capped at 400
   characters. The model is told to ask something different; today's entry is
   never rewritten and the borrowed question is never stored in it.
 - The This page and Journal rail cards never invoke the model on their own. They
@@ -355,7 +355,7 @@ Packaged builds enforce defense-in-depth:
   background networking, component updates, sync, domain reliability, pings, and
   network prediction. These Chromium switches do not apply to the dedicated Node
   model downloader, which is the explicit exception below.
-- A strict production CSP blocks remote scripts, styles, fonts, images, frames,
+- The production CSP blocks remote scripts, styles, fonts, images, frames,
   workers, forms, and all `connect-src` traffic.
 - Renderer: `sandbox: true`, `contextIsolation: true`, `nodeIntegration: false`,
   `webviewTag: false`, permissions denied, navigation and new windows blocked.
@@ -368,7 +368,7 @@ Packaged builds enforce defense-in-depth:
   process. It is pinned to Hugging Face HTTPS URLs, capped at known byte sizes,
   and verified by SHA-256 before installation. It starts only when you press a
   download button. The renderer has no network path.
-- A photo is read into a temporary `0600` PNG, passed to the local OCR process,
+- Photos are read into a temporary `0600` PNG, passed to the local OCR process,
   and deleted before the request returns. Only the reviewed text is written to the
   vault. The original photo is never copied into the journal.
 - There is no updater, crash reporter, account, telemetry, or remote content. The
