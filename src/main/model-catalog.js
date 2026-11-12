@@ -1,10 +1,13 @@
 'use strict';
 
+const { model } = require('./copy');
+
 // Pinned model artifacts. These weights are not redistributed with the app;
-// they are downloaded once from Hugging Face and verified locally.
+// they are downloaded once from Hugging Face and verified locally. The labels
+// live in copy.js so the interface never shows product-internal wording.
 const COMPANION_MODEL = Object.freeze({
   id: 'companion',
-  label: 'Companion',
+  label: model.labels.companion,
   file: 'MiniCPM-V-4_7-1B-Q4_K_M.gguf',
   bytes: 672003680,
   sha256: 'f18f594747e5317ab490cff9c06339c9cfb89acbe2f02ebc48a4e167bc23576d',
@@ -13,7 +16,7 @@ const COMPANION_MODEL = Object.freeze({
 
 const OCR_MODEL = Object.freeze({
   id: 'ocrModel',
-  label: 'Photo reader',
+  label: model.labels.photoReader,
   file: 'MiniCPM-OCR-1_0-Q4_K_M.gguf',
   bytes: 529106816,
   sha256: 'c80a703400633f298cc2fddf6d493a541be36918c0801c0b1bf3f14c5703ce49',
@@ -22,7 +25,7 @@ const OCR_MODEL = Object.freeze({
 
 const OCR_PROJECTOR = Object.freeze({
   id: 'ocrProjector',
-  label: 'Photo reader support',
+  label: model.labels.photoReaderSupport,
   file: 'mmproj-model-f16-4x.gguf',
   bytes: 901017536,
   sha256: 'ceed82261b3b1380c3165f8b37c10117a50093be1362cbfeeb692fa036444682',

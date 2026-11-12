@@ -31,6 +31,7 @@ const {
 } = require('./ocr-utils');
 const { ModelStore, ModelManagerError } = require('./model-manager');
 const { DOWNLOADABLE_MODELS } = require('./model-catalog');
+const { model: modelCopy } = require('./copy');
 const {
   applyOfflineSwitches,
   hardenSession,
@@ -550,8 +551,8 @@ function registerIpc() {
 
   handle('model:import-folder', async () => {
     const options = {
-      title: 'Choose the folder with your model files',
-      buttonLabel: 'Use this folder',
+      title: modelCopy.dialog.importFolderTitle,
+      buttonLabel: modelCopy.dialog.importFolderButton,
       properties: ['openDirectory']
     };
     const result =
@@ -569,9 +570,9 @@ function registerIpc() {
   handle('model:import-file', async ({ assetId }) => {
     const id = requireText(assetId, 'Model asset', 64);
     const options = {
-      title: 'Choose a GGUF model file',
-      buttonLabel: 'Use this file',
-      filters: [{ name: 'GGUF model', extensions: ['gguf'] }],
+      title: modelCopy.dialog.importFileTitle,
+      buttonLabel: modelCopy.dialog.importFileButton,
+      filters: [{ name: modelCopy.dialog.importFileFilter, extensions: ['gguf'] }],
       properties: ['openFile']
     };
     const result =

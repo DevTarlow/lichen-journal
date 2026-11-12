@@ -12,6 +12,7 @@ const {
   buildOcrArgs
 } = require('./ocr-utils');
 const { normalizeComputeMode } = require('./compute-utils');
+const { photoReader: photoReaderCopy } = require('./copy');
 
 class OcrEngineError extends Error {
   constructor(code, message, details = undefined) {
@@ -176,14 +177,14 @@ class OcrEngine extends EventEmitter {
     if (!this.#exists(selected.path)) {
       throw new OcrEngineError(
         'OCR_RUNTIME_MISSING',
-        'The local OCR runtime is missing from this installation.',
+        photoReaderCopy.errors.runtimeMissing,
         selected.path
       );
     }
     if (!facts.modelPresent || !facts.projectorPresent) {
       throw new OcrEngineError(
         'OCR_MODEL_MISSING',
-        'The local OCR model is missing from this installation.',
+        photoReaderCopy.errors.notInstalled,
         facts.modelPresent ? this.projectorPath : this.modelPath
       );
     }
@@ -267,7 +268,7 @@ class OcrEngine extends EventEmitter {
       }
       throw (
         lastError ||
-        new OcrEngineError('OCR_FAILED', 'The local OCR model could not read this photo.')
+        new OcrEngineError('OCR_FAILED', photoReaderCopy.errors.readFailed)
       );
     } catch (error) {
       const cancelled = error.code === 'OCR_CANCELLED';
@@ -357,7 +358,7 @@ class OcrEngine extends EventEmitter {
         finish(
           new OcrEngineError(
             'OCR_RUNTIME_MISSING',
-            'The local OCR runtime could not start.',
+            photoReaderCopy.errors.runtimeStart,
             error.message
           )
         );
@@ -380,7 +381,7 @@ class OcrEngine extends EventEmitter {
         finish(
           new OcrEngineError(
             'OCR_RUNTIME_MISSING',
-            'The local OCR runtime could not start.',
+            photoReaderCopy.errors.runtimeStart,
             error.message
           )
         );
@@ -400,7 +401,7 @@ class OcrEngine extends EventEmitter {
           finish(
             new OcrEngineError(
               'OCR_FAILED',
-              'The local OCR model could not read this photo.',
+              photoReaderCopy.errors.readFailed,
               detail || (signal ? `Stopped by ${signal}.` : `Exited with code ${code}.`)
             )
           );

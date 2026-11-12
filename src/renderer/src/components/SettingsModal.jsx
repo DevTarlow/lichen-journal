@@ -436,9 +436,9 @@ export default function SettingsModal({
               </button>
             </div>
             <p className="settings-copy">
-              MiniCPM-V 4.7 1B Instruct, downloaded once from Hugging Face and then
-              run from a local GGUF file. It uses the processor by default; the
-              video card switch in Preferences can use your {accelNoun} for faster answers.
+              The local companion, downloaded once during setup and then run from
+              a file on this device. It uses the processor by default; the video
+              card switch in Preferences can use your {accelNoun} for faster answers.
             </p>
             <PathRow label="Model file" value={aiStatus?.modelPath || info?.modelPath} onCopy={handleCopy} />
             <ModelAssetList
@@ -470,19 +470,18 @@ export default function SettingsModal({
               </h3>
             </div>
             <p className="settings-copy">
-              MiniCPM-OCR 1.0 Q4_K_M reads photos of pages with a 4× vision
-              projector. The model and projector are downloaded once; the local
-              runtime ships with the app. Photo reading uses the same video-card
-              preference and falls back to the processor automatically. The photo
-              itself is never stored.
+              The photo reader reads photos of pages. It and its support file are
+              downloaded once; everything else ships with the app. Photo reading
+              uses the same video-card preference and falls back to the processor
+              automatically. The photo itself is never stored.
             </p>
-            <PathRow label="OCR model" value={info?.ocrModelPath} onCopy={handleCopy} />
+            <PathRow label="Photo reader model" value={info?.ocrModelPath} onCopy={handleCopy} />
             <PathRow
               label="Photo reader support"
               value={info?.ocrProjectorPath}
               onCopy={handleCopy}
             />
-            <PathRow label="OCR runtime" value={info?.ocrRuntimePath} onCopy={handleCopy} />
+            <PathRow label="Photo reader runtime" value={info?.ocrRuntimePath} onCopy={handleCopy} />
             <ModelAssetList
               status={modelStatus}
               assetIds={['ocrModel', 'ocrProjector']}
@@ -525,7 +524,7 @@ export default function SettingsModal({
             <ul className="security-list">
               <li>The renderer cannot reach HTTP, HTTPS, WebSocket, or DNS traffic.</li>
               <li>No accounts, analytics, crash reporting, sync, or auto-update channels.</li>
-              <li>Model weights download only when you press a download button; after setup, no network is used.</li>
+              <li>Model files download only when you press a download button; after setup, no network is used.</li>
               <li>The interface loads no remote fonts, images, or scripts.</li>
             </ul>
             <button type="button" className="button button-primary button-small" onClick={handleOfflineCheck} disabled={checkingOffline}>

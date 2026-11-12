@@ -26,6 +26,7 @@ const {
   normalizeComputeMode,
   resolveRuntimeOptions
 } = require('./compute-utils');
+const { companion: companionCopy } = require('./copy');
 
 const CONTEXT_SIZE = 4096;
 const MAX_THREADS = 8;
@@ -216,12 +217,12 @@ class AiEngine extends EventEmitter {
         state: 'missing',
         error: {
           code: 'MODEL_MISSING',
-          message: 'The MiniCPM-V model file is missing from this installation.'
+          message: companionCopy.errors.missing
         }
       });
       throw new AiEngineError(
         'MODEL_MISSING',
-        'The local companion model is missing. Reinstall Lichen Journal or place the GGUF file beside the app.',
+        companionCopy.errors.missing,
         this.modelPath
       );
     }
@@ -255,7 +256,7 @@ class AiEngine extends EventEmitter {
           : new AiEngineError(
               'MODEL_LOAD_FAILED',
               this.status.error?.message ||
-                'The companion model could not be loaded. It may be missing, corrupt, or out of memory.',
+                companionCopy.errors.loadFailed,
               error.message
             );
       }
@@ -283,7 +284,7 @@ class AiEngine extends EventEmitter {
           : new AiEngineError(
               'MODEL_LOAD_FAILED',
               this.status.error?.message ||
-                'The companion model could not be loaded. It may be missing, corrupt, or out of memory.',
+                companionCopy.errors.loadFailed,
               cpuError.message
             );
       }
@@ -395,7 +396,7 @@ class AiEngine extends EventEmitter {
     const message =
       error instanceof AiEngineError
         ? error.message
-        : 'The companion model could not be loaded. It may be missing, corrupt, or out of memory.';
+        : companionCopy.errors.loadFailed;
     this.#setStatus({
       state: 'error',
       backend: 'cpu',

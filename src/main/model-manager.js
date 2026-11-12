@@ -5,6 +5,9 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { EventEmitter, once } = require('node:events');
 const { DOWNLOADABLE_MODELS } = require('./model-catalog');
+const { model: modelCopy } = require('./copy');
+
+const modelErrors = modelCopy.errors;
 
 const PROGRESS_INTERVAL_MS = 180;
 const STALL_TIMEOUT_MS = 60_000;
@@ -28,7 +31,7 @@ function safeError(error) {
   }
   return {
     code: 'MODEL_DOWNLOAD_FAILED',
-    message: 'The model could not be downloaded.',
+    message: modelErrors.genericDownload,
     details: typeof error?.message === 'string' ? error.message.slice(0, 400) : undefined
   };
 }
@@ -172,7 +175,7 @@ class ModelStore extends EventEmitter {
 
   #assertUsable() {
     if (this.disposed) {
-      throw new ModelManagerError('MODEL_DOWNLOAD_FAILED', 'The model setup is shutting down.');
+      throw new ModelManagerError('MODEL_DOWNLOAD_FAILED', modelErrors.shuttingDown);
     }
   }
 
@@ -180,7 +183,7 @@ class ModelStore extends EventEmitter {
     if (this.active || this.batchActive || this.importing.size > 0) {
       throw new ModelManagerError(
         'MODEL_DOWNLOAD_BUSY',
-        'Another model download is already running.'
+        modelErrors.busy
       );
     }
   }
@@ -198,13 +201,13 @@ class ModelStore extends EventEmitter {
     try {
       stat = fs.statSync(partPath);
     } catch {
-      throw new ModelManagerError('MODEL_INVALID', 'The downloaded model file is missing.');
+      throw new ModelManagerError('MODEL_INVALID', modelErrors.missingPart);
     }
     if (stat.size !== asset.bytes) {
       fs.rmSync(partPath, { force: true });
       throw new ModelManagerError(
         'MODEL_INVALID',
-        'The downloaded model has the wrong size.',
+        modelErrors.wrongSize,
         `${stat.size} / ${asset.bytes}`
       );
     }
@@ -214,7 +217,7 @@ class ModelStore extends EventEmitter {
       fs.rmSync(partPath, { force: true });
       throw new ModelManagerError(
         'MODEL_CHECKSUM_MISMATCH',
-        'The downloaded model did not match its checksum. The download was discarded.'
+        modelErrors.damaged
       );
     }
 
@@ -243,11 +246,11 @@ class ModelStore extends EventEmitter {
       });
     } catch (error) {
       if (controller.signal.aborted) {
-        throw new ModelManagerError('MODEL_CANCELLED', 'The model download was cancelled.');
+        throw new ModelManagerError('MODEL_CANCELLED', modelErrors.cancelled);
       }
       throw new ModelManagerError(
         'MODEL_DOWNLOAD_FAILED',
-        'The model could not be downloaded. Check the connection and try again.',
+        modelErrors.connection,
         error.message
       );
     }
@@ -265,7 +268,7 @@ class ModelStore extends EventEmitter {
     } else if (!response.ok) {
       throw new ModelManagerError(
         'MODEL_DOWNLOAD_FAILED',
-        `The model download failed with HTTP ${response.status}.`,
+        modelErrors.http(response.status),
         response.statusText
       );
     }
@@ -273,11 +276,11 @@ class ModelStore extends EventEmitter {
     if (response.url && asset.url.startsWith('https:') && !response.url.startsWith('https:')) {
       throw new ModelManagerError(
         'MODEL_DOWNLOAD_FAILED',
-        'The model download was redirected to an insecure address.'
+        modelErrors.insecure
       );
     }
     if (!response.body) {
-      throw new ModelManagerError('MODEL_DOWNLOAD_FAILED', 'The download returned no data.');
+      throw new ModelManagerError('MODEL_DOWNLOAD_FAILED', modelErrors.noData);
     }
 
     const output = fs.createWriteStream(partPath, {
@@ -301,14 +304,14 @@ class ModelStore extends EventEmitter {
     try {
       for await (const chunk of response.body) {
         if (controller.signal.aborted) {
-          throw new ModelManagerError('MODEL_CANCELLED', 'The model download was cancelled.');
+          throw new ModelManagerError('MODEL_CANCELLED', modelErrors.cancelled);
         }
         const buffer = Buffer.from(chunk);
         downloaded += buffer.length;
         if (downloaded > asset.bytes) {
           throw new ModelManagerError(
             'MODEL_INVALID',
-            'The model download was larger than expected.'
+            modelErrors.tooLarge
           );
         }
         if (!output.write(buffer)) await once(output, 'drain');
@@ -323,7 +326,7 @@ class ModelStore extends EventEmitter {
       if (downloaded !== asset.bytes) {
         throw new ModelManagerError(
           'MODEL_INVALID',
-          'The model download ended before it was complete.'
+          modelErrors.incomplete
         );
       }
       return downloaded;
@@ -331,12 +334,12 @@ class ModelStore extends EventEmitter {
       if (streamError) {
         throw new ModelManagerError(
           'MODEL_DISK_ERROR',
-          'The model could not be written to disk. Check free space and permissions.',
+          modelErrors.disk,
           streamError.message
         );
       }
       if (controller.signal.aborted) {
-        throw new ModelManagerError('MODEL_CANCELLED', 'The model download was cancelled.');
+        throw new ModelManagerError('MODEL_CANCELLED', modelErrors.cancelled);
       }
       throw error;
     } finally {
@@ -347,7 +350,7 @@ class ModelStore extends EventEmitter {
 
   async #runDownload(assetId) {
     const asset = this.assetMap.get(assetId);
-    if (!asset) throw new ModelManagerError('MODEL_INVALID', 'Unknown model asset.');
+    if (!asset) throw new ModelManagerError('MODEL_INVALID', modelErrors.unknownAsset);
     const current = this.#assetStatus(asset);
     if (current.state === 'ready') return current;
 
@@ -356,7 +359,7 @@ class ModelStore extends EventEmitter {
     } catch (error) {
       const diskError = new ModelManagerError(
         'MODEL_DISK_ERROR',
-        'Lichen Journal cannot create its model folder. Check disk space and permissions.',
+        modelErrors.createFolder,
         error.message
       );
       this.errors.set(assetId, safeError(diskError));
@@ -454,20 +457,20 @@ class ModelStore extends EventEmitter {
     this.#assertUsable();
     this.#assertIdle();
     const asset = this.assetMap.get(assetId);
-    if (!asset) throw new ModelManagerError('MODEL_INVALID', 'Unknown model asset.');
+    if (!asset) throw new ModelManagerError('MODEL_INVALID', modelErrors.unknownAsset);
     if (!filePath || typeof filePath !== 'string') {
-      throw new ModelManagerError('MODEL_IMPORT_FAILED', 'Choose a model file to import.');
+      throw new ModelManagerError('MODEL_IMPORT_FAILED', modelErrors.importChoose);
     }
     let stat;
     try {
       stat = fs.statSync(filePath);
     } catch {
-      throw new ModelManagerError('MODEL_IMPORT_FAILED', 'That model file could not be opened.');
+      throw new ModelManagerError('MODEL_IMPORT_FAILED', modelErrors.importOpen);
     }
     if (!stat.isFile() || stat.size !== asset.bytes) {
       throw new ModelManagerError(
         'MODEL_INVALID',
-        'That file isn’t the one Lichen Journal expects. Choose the right file and try again.'
+        modelErrors.importWrong
       );
     }
 
@@ -476,7 +479,7 @@ class ModelStore extends EventEmitter {
     } catch (error) {
       const diskError = new ModelManagerError(
         'MODEL_DISK_ERROR',
-        'Lichen Journal cannot create its model folder. Check disk space and permissions.',
+        modelErrors.createFolder,
         error.message
       );
       this.errors.set(assetId, safeError(diskError));
@@ -542,7 +545,7 @@ class ModelStore extends EventEmitter {
     if (failure) {
       throw new ModelManagerError(
         'MODEL_CLEAR_FAILED',
-        'Some downloaded model files could not be removed. Close any app using them and try again.',
+        modelErrors.clearFailed,
         typeof failure.message === 'string' ? failure.message.slice(0, 400) : undefined
       );
     }
