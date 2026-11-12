@@ -249,6 +249,18 @@ test('checks the video card without exposing driver details', async () => {
     });
     const copy = await status.innerText();
     expect(copy).not.toMatch(/CUDA|Vulkan|Metal|VRAM/i);
+    const saved = JSON.parse(
+      fs.readFileSync(path.join(userDataDir, 'settings.json'), 'utf8')
+    );
+    expect(saved.compute.choiceMade).toBe(true);
+    expect(saved.compute.mode).toMatch(/^(cpu|gpu)$/);
+    if (saved.compute.mode === 'gpu') {
+      expect(saved.compute.verified).toBe(true);
+      expect(copy).toMatch(/Using your video card/i);
+    } else {
+      expect(saved.compute.verified).toBe(false);
+      expect(copy).toMatch(/processor/i);
+    }
     expect(errors).toEqual([]);
   } finally {
     await app.close().catch(() => {});
