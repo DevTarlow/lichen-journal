@@ -42,6 +42,16 @@ const {
 const { runSelftest } = require('./selftest');
 
 const IS_SELFTEST = process.env.LICHEN_SELFTEST === '1';
+
+function devToolsEnabled() {
+  if (process.env.LICHEN_DEVTOOLS === '1') return true;
+  if (process.env.LICHEN_DEVTOOLS === '0') return false;
+  return !app.isPackaged;
+}
+
+function devResetEnabled() {
+  return !app.isPackaged && process.env.LICHEN_DEVTOOLS !== '0';
+}
 const BACKGROUND = { light: '#f3eee1', dark: '#111713' };
 const MAX_PREVIEW_WIDTH = 1200;
 const MAX_NORMALIZED_IMAGE_BYTES = 60 * 1024 * 1024;
@@ -304,6 +314,7 @@ function registerIpc() {
     platform: process.platform,
     arch: process.arch,
     isPackaged: app.isPackaged,
+    devReset: devResetEnabled(),
     userDataPath: app.getPath('userData'),
     dbPath: vault.dbPath,
     vaultDir: vault.vaultDir,
@@ -839,7 +850,7 @@ function createWindow() {
       nodeIntegrationInWorker: false,
       webviewTag: false,
       spellcheck: false,
-      devTools: !app.isPackaged || process.env.LICHEN_DEVTOOLS === '1',
+      devTools: devToolsEnabled(),
       backgroundThrottling: false
     }
   });

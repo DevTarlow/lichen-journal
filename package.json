@@ -19,6 +19,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
+    "screenshots": "npm run build && node scripts/capture-screenshots.mjs",
     "smoke:ai": "node scripts/smoke-ai.mjs",
     "smoke:ai:gpu": "cross-env LICHEN_COMPUTE_MODE=gpu LICHEN_REQUIRE_GPU=1 node scripts/smoke-ai.mjs",
     "smoke:ocr": "node scripts/smoke-ocr.mjs",

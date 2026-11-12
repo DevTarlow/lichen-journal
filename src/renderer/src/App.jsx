@@ -991,7 +991,7 @@ export default function App() {
   if (bootState === 'error') return <BootError error={bootError} />;
 
   const shortcutLabel = info?.platform === 'darwin' ? '⌘' : 'Ctrl';
-  const showDevTools = Boolean(info && info.isPackaged === false);
+  const showDevTools = Boolean(info?.devReset);
   const showFirstRun =
     (stats?.entryCount ?? info?.stats?.entryCount ?? 0) === 0 &&
     !entry &&

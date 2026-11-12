@@ -151,6 +151,7 @@ npm run dist             # Installer/AppImage for the current OS
 npm run smoke:ai         # Direct companion smoke test (reflection + metadata + palette)
 npm run smoke:ai:gpu     # Companion smoke on a host with a working video card
 npm run smoke:ocr        # Direct OCR smoke test on tests/fixtures/ocr-journal-page.png
+npm run screenshots      # Rebuild and refresh screenshots/*.png from the current UI
 npm run selftest         # Electron end-to-end vault/AI/OCR/export/purge self-test
 npm run model:verify     # Verify the three development GGUF files
 npm run ocr:runtime:fetch   # Download the pinned processor and video-card OCR runtimes
@@ -465,11 +466,24 @@ hooks (`model-setup`, `model-setup-primary`, `compute-choice-gpu`) and state
 attributes instead of matching display copy, so wording changes do not require
 test edits.
 
+The README images are generated from the running build:
+
+```bash
+npm run screenshots
+```
+
+The script seeds the demo journal into an isolated temporary app-data directory,
+launches the production bundle with the developer controls hidden, and writes the
+five `screenshots/*.png` files. Images are palette-compressed on the way out to
+keep the repository history small. Run it after any interface change that makes
+a README image stale.
+
 ### Development reset controls
 
 When the app runs from source, the header includes two developer-only reset
 buttons. They are not present in packaged builds, and both ask for confirmation
-before changing anything.
+before changing anything. Set `LICHEN_DEVTOOLS=0` to launch a source checkout
+without them, as the packaged app and the screenshot script do.
 
 - **Reset app** clears every entry, theme and preference, the saved compute
   setting, and the downloaded model files. The next screen is the first-run
@@ -540,7 +554,7 @@ for the release checklist, artifact checks, and signing notes.
 | `LICHEN_ENABLE_GPU=1` | Re-enable Chromium hardware acceleration for the interface (off by default for stability). This does not control whether the AI models use a video card; use the in-app preference for that. |
 | `LICHEN_COMPUTE_MODE=cpu\|gpu` | Test/dev override for the model accelerator. The saved in-app preference is authoritative in normal use. |
 | `LICHEN_REQUIRE_GPU=1` | Make the GPU smoke checks fail if the video card was not actually used. |
-| `LICHEN_DEVTOOLS=1` | Allow DevTools in packaged builds for debugging. |
+| `LICHEN_DEVTOOLS` | Set to `1` to allow DevTools in packaged builds for debugging, or `0` to hide the developer reset controls in a source checkout (used by the screenshot script). |
 | `LICHEN_SELFTEST=1` | Run the packaged self-test and exit. |
 | `LICHEN_MODEL_DIR` | Test/dev override for the directory containing model files. |
 | `VITE_DEV_SERVER_URL` | Set by the dev script; loads the Vite renderer. |
