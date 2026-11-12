@@ -255,6 +255,7 @@ body,
   height: 100%;
 }
 
+/* Secondary interface text stays at 0.8rem (12.8px) or above for readability. */
 body {
   margin: 0;
   font-family: var(--font-ui);
@@ -348,7 +349,7 @@ blockquote {
 }
 
 .eyebrow {
-  font-size: 0.63rem;
+  font-size: 0.8rem;
   font-weight: 650;
   letter-spacing: 0.15em;
   text-transform: uppercase;
@@ -379,7 +380,7 @@ blockquote {
   border-radius: 999px;
   background: var(--surface);
   color: var(--ink);
-  font-size: 0.79rem;
+  font-size: 0.84rem;
   font-weight: 560;
   letter-spacing: 0.005em;
   white-space: nowrap;
@@ -438,7 +439,7 @@ blockquote {
 .button-small {
   min-height: 31px;
   padding: 5px 11px;
-  font-size: 0.72rem;
+  font-size: 0.8rem;
 }
 
 .icon-button {
@@ -479,7 +480,7 @@ blockquote {
   border: 0;
   background: none;
   color: var(--sage-deep);
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   font-weight: 620;
   letter-spacing: 0.01em;
   transition: color 140ms ease, opacity 140ms ease;
@@ -566,7 +567,7 @@ blockquote {
 
 .brand-copy p {
   margin-top: 2px;
-  font-size: 0.68rem;
+  font-size: 0.8rem;
   letter-spacing: 0.02em;
   color: var(--ink-muted);
   white-space: nowrap;
@@ -602,7 +603,7 @@ blockquote {
 }
 
 .dev-reset-label {
-  font-size: 0.7rem;
+  font-size: 0.8rem;
 }
 
 .security-badge {
@@ -614,7 +615,7 @@ blockquote {
   border-radius: 999px;
   background: var(--sage-soft);
   color: var(--sage-deep);
-  font-size: 0.69rem;
+  font-size: 0.8rem;
   font-weight: 650;
   letter-spacing: 0.015em;
   white-space: nowrap;
@@ -703,7 +704,7 @@ blockquote {
   border: 0;
   background: transparent;
   color: var(--ink);
-  font-size: 0.8rem;
+  font-size: 0.84rem;
   outline: 0;
 }
 
@@ -739,7 +740,7 @@ blockquote {
   background: var(--surface-muted);
   color: var(--ink-muted);
   font-family: var(--font-ui);
-  font-size: 0.59rem;
+  font-size: 0.8rem;
   letter-spacing: 0.02em;
   white-space: nowrap;
 }
@@ -769,7 +770,7 @@ blockquote {
   border-radius: 999px;
   background: var(--surface);
   color: var(--ink-soft);
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   line-height: 1.35;
   transition:
     background 150ms ease,
@@ -786,7 +787,7 @@ blockquote {
 
 .tag-chip span {
   color: var(--ink-muted);
-  font-size: 0.61rem;
+  font-size: 0.8rem;
 }
 
 .tag-chip.is-active {
@@ -800,7 +801,7 @@ blockquote {
 }
 
 .tags-empty {
-  font-size: 0.71rem;
+  font-size: 0.8rem;
   line-height: 1.5;
   color: var(--ink-muted);
   font-style: italic;
@@ -843,7 +844,7 @@ blockquote {
   border-radius: 7px;
   background: transparent;
   color: var(--ink-muted);
-  font-size: 0.64rem;
+  font-size: 0.8rem;
   font-weight: 620;
   letter-spacing: 0.02em;
 }
@@ -862,7 +863,7 @@ blockquote {
 
 .calendar-weekdays span {
   text-align: center;
-  font-size: 0.57rem;
+  font-size: 0.8rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -941,7 +942,7 @@ blockquote {
 }
 
 .calendar-day-number {
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   font-weight: 550;
   line-height: 1;
 }
@@ -986,7 +987,7 @@ blockquote {
 
 .timeline-month {
   margin: 0 0 2px 5px;
-  font-size: 0.61rem;
+  font-size: 0.8rem;
   font-weight: 700;
   letter-spacing: 0.13em;
   text-transform: uppercase;
@@ -1046,7 +1047,7 @@ blockquote {
 }
 
 .entry-date-stamp span {
-  font-size: 0.54rem;
+  font-size: 0.8rem;
   font-weight: 650;
   letter-spacing: 0.09em;
   text-transform: uppercase;
@@ -1072,7 +1073,7 @@ blockquote {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 0.775rem;
+  font-size: 0.84rem;
   font-weight: 650;
   color: var(--ink);
 }
@@ -1090,7 +1091,7 @@ blockquote {
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
-  font-size: 0.69rem;
+  font-size: 0.8rem;
   line-height: 1.45;
   color: var(--ink-muted);
 }
@@ -1108,7 +1109,7 @@ blockquote {
   gap: 6px;
   min-width: 0;
   margin-top: 1px;
-  font-size: 0.6rem;
+  font-size: 0.8rem;
   color: var(--ink-muted);
   white-space: nowrap;
   overflow: hidden;
@@ -1150,7 +1151,7 @@ blockquote {
 
 .timeline-empty {
   padding: 16px 8px;
-  font-size: 0.74rem;
+  font-size: 0.8rem;
   line-height: 1.55;
   color: var(--ink-muted);
   text-align: center;
@@ -1193,7 +1194,7 @@ blockquote {
   display: flex;
   align-items: baseline;
   gap: 4px;
-  font-size: 0.64rem;
+  font-size: 0.8rem;
   color: var(--ink-muted);
 }
 
@@ -1430,7 +1431,7 @@ blockquote {
 
 .page-back-hint {
   max-width: 34ch;
-  font-size: 0.68rem;
+  font-size: 0.8rem;
   line-height: 1.55;
   color: var(--ink-muted);
 }
@@ -1481,7 +1482,7 @@ blockquote {
 
 .first-run-copy p:last-child {
   max-width: 52ch;
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   line-height: 1.5;
   color: var(--ink-soft);
 }
@@ -1513,7 +1514,7 @@ blockquote {
   border-radius: 99px;
   background: var(--sage-wash);
   color: var(--sage-deep);
-  font-size: 0.59rem;
+  font-size: 0.8rem;
   letter-spacing: 0.02em;
   text-transform: none;
   vertical-align: 1px;
@@ -1534,7 +1535,7 @@ blockquote {
   padding: 2px 0;
   border: 0;
   background: none;
-  font-size: 0.64rem;
+  font-size: 0.8rem;
   color: var(--ink-muted);
   white-space: nowrap;
 }
@@ -1575,7 +1576,7 @@ blockquote {
 
 .shortcut-hint {
   font-family: var(--font-mono);
-  font-size: 0.58rem;
+  font-size: 0.8rem;
   letter-spacing: 0.02em;
   color: var(--ink-muted);
   opacity: 0.72;
@@ -1657,7 +1658,7 @@ blockquote {
   flex: 0 0 auto;
   min-height: 34px;
   padding: 6px 13px;
-  font-size: 0.72rem;
+  font-size: 0.8rem;
 }
 
 .finish-actions {
@@ -1684,7 +1685,7 @@ blockquote {
   border-radius: 999px;
   background: var(--sage-wash);
   color: var(--sage-deep);
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   font-weight: 600;
   letter-spacing: 0.005em;
   white-space: nowrap;
@@ -1694,7 +1695,7 @@ blockquote {
   flex: 0 0 auto;
   min-height: 34px;
   padding: 6px 12px;
-  font-size: 0.72rem;
+  font-size: 0.8rem;
 }
 
 .delete-page {
@@ -1713,7 +1714,7 @@ blockquote {
   align-items: center;
   gap: 5px;
   flex-wrap: wrap;
-  font-size: 0.63rem;
+  font-size: 0.8rem;
   color: var(--ink-muted);
 }
 
@@ -1726,7 +1727,7 @@ blockquote {
   border-radius: 99px;
   background: var(--sage-wash);
   color: var(--sage-deep);
-  font-size: 0.57rem;
+  font-size: 0.8rem;
   font-weight: 620;
   letter-spacing: 0.02em;
 }
@@ -1763,7 +1764,7 @@ blockquote {
 
 .page-reflections-count {
   color: var(--ink-muted);
-  font-size: 0.6rem;
+  font-size: 0.8rem;
   font-variant-numeric: tabular-nums;
 }
 
@@ -1787,7 +1788,7 @@ blockquote {
 
 .page-reflection-question {
   font-family: var(--font-serif);
-  font-size: 0.83rem;
+  font-size: 0.84rem;
   font-style: italic;
   line-height: 1.5;
   color: var(--ink-soft);
@@ -1797,7 +1798,7 @@ blockquote {
   margin-top: 3px;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-  font-size: 0.76rem;
+  font-size: 0.84rem;
   line-height: 1.6;
   color: var(--ink);
 }
@@ -1809,11 +1810,11 @@ blockquote {
   gap: 8px;
   margin-top: 4px;
   color: var(--ink-muted);
-  font-size: 0.59rem;
+  font-size: 0.8rem;
 }
 
 .page-reflection-edit {
-  font-size: 0.59rem;
+  font-size: 0.8rem;
 }
 
 /* --------------------------------------------------------------- companion */
@@ -1874,7 +1875,7 @@ blockquote {
   border: 1px solid var(--line);
   border-radius: 99px;
   color: var(--ink-muted);
-  font-size: 0.55rem;
+  font-size: 0.8rem;
   font-weight: 650;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -1890,7 +1891,7 @@ blockquote {
   border: 1px solid var(--line);
   border-radius: 10px;
   background: color-mix(in srgb, var(--bg) 46%, transparent);
-  font-size: 0.63rem;
+  font-size: 0.8rem;
   color: var(--ink-muted);
 }
 
@@ -1966,7 +1967,7 @@ blockquote {
   background: var(--surface-raised);
   box-shadow: var(--shadow-soft);
   color: var(--ink-soft);
-  font-size: 0.63rem;
+  font-size: 0.8rem;
   line-height: 1.45;
   text-align: left;
   opacity: 0;
@@ -1984,7 +1985,7 @@ blockquote {
 }
 
 .companion-tooltip-title {
-  font-size: 0.67rem;
+  font-size: 0.8rem;
   font-weight: 650;
   color: var(--ink);
 }
@@ -2008,7 +2009,7 @@ blockquote {
 }
 
 .companion-tooltip-rows dt {
-  font-size: 0.56rem;
+  font-size: 0.8rem;
   font-weight: 650;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -2017,7 +2018,7 @@ blockquote {
 
 .companion-tooltip-rows dd {
   margin: 0;
-  font-size: 0.61rem;
+  font-size: 0.8rem;
   font-weight: 600;
   text-align: right;
   color: var(--ink);
@@ -2026,7 +2027,7 @@ blockquote {
 .companion-tooltip-note {
   padding-top: 5px;
   border-top: 1px solid var(--line);
-  font-size: 0.57rem;
+  font-size: 0.8rem;
   line-height: 1.4;
   color: var(--ink-muted);
 }
@@ -2073,7 +2074,7 @@ blockquote {
   border-radius: 11px;
   background: var(--clay-soft);
   color: var(--clay);
-  font-size: 0.68rem;
+  font-size: 0.8rem;
   line-height: 1.5;
 }
 
@@ -2106,7 +2107,7 @@ blockquote {
   align-items: center;
   gap: 5px;
   color: var(--ink-soft);
-  font-size: 0.62rem;
+  font-size: 0.8rem;
   font-weight: 700;
   letter-spacing: 0.11em;
   text-transform: uppercase;
@@ -2157,7 +2158,7 @@ blockquote {
 }
 
 .section-hint {
-  font-size: 0.64rem;
+  font-size: 0.8rem;
   line-height: 1.5;
   color: var(--ink-muted);
   font-style: italic;
@@ -2169,7 +2170,7 @@ blockquote {
   gap: 6px;
   margin-top: -7px;
   color: var(--ink-muted);
-  font-size: 0.63rem;
+  font-size: 0.8rem;
   line-height: 1.45;
 }
 
@@ -2195,7 +2196,7 @@ blockquote {
   border-radius: 999px;
   background: color-mix(in srgb, var(--bg) 40%, transparent);
   color: var(--ink-muted);
-  font-size: 0.64rem;
+  font-size: 0.8rem;
   line-height: 1.35;
   transition:
     border-color 150ms ease,
@@ -2242,7 +2243,7 @@ blockquote {
 }
 
 .carried-note {
-  font-size: 0.62rem;
+  font-size: 0.8rem;
   line-height: 1.5;
   color: var(--ink-muted);
 }
@@ -2268,7 +2269,7 @@ blockquote {
 .page-words,
 .weather-caption {
   color: var(--ink-muted);
-  font-size: 0.6rem;
+  font-size: 0.8rem;
   font-variant-numeric: tabular-nums;
 }
 
@@ -2277,7 +2278,7 @@ blockquote {
   align-items: center;
   gap: 9px;
   min-height: 20px;
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   line-height: 1.45;
 }
 
@@ -2300,7 +2301,7 @@ blockquote {
 
 .page-vibe {
   font-family: var(--font-serif);
-  font-size: 0.82rem;
+  font-size: 0.84rem;
   font-style: italic;
   color: var(--ink-soft);
 }
@@ -2312,7 +2313,7 @@ blockquote {
   flex: 0 0 auto;
   min-width: 48px;
   color: var(--ink-muted);
-  font-size: 0.6rem;
+  font-size: 0.8rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -2330,7 +2331,7 @@ blockquote {
 
 .page-empty {
   color: var(--ink-muted);
-  font-size: 0.66rem;
+  font-size: 0.8rem;
   font-style: italic;
 }
 
@@ -2350,7 +2351,7 @@ blockquote {
   border-radius: 50%;
   background: transparent;
   color: var(--ink-muted);
-  font-size: 0.78rem;
+  font-size: 0.84rem;
   line-height: 1;
 }
 
@@ -2374,7 +2375,7 @@ blockquote {
 
 .mood-of {
   color: var(--ink-muted);
-  font-size: 0.62rem;
+  font-size: 0.8rem;
   font-weight: 500;
 }
 
@@ -2394,7 +2395,7 @@ blockquote {
   border-radius: 999px;
   background: transparent;
   color: var(--ink-muted);
-  font-size: 0.62rem;
+  font-size: 0.8rem;
   line-height: 1.5;
   transition:
     border-color 150ms ease,
@@ -2416,7 +2417,7 @@ blockquote {
 
 .page-vibe-note {
   color: var(--ink-muted);
-  font-size: 0.6rem;
+  font-size: 0.8rem;
   font-style: normal;
   letter-spacing: 0.02em;
 }
@@ -2439,7 +2440,7 @@ blockquote {
   -webkit-line-clamp: 2;
   color: var(--ink-soft);
   font-family: var(--font-serif);
-  font-size: 0.74rem;
+  font-size: 0.8rem;
   font-style: italic;
   line-height: 1.45;
 }
@@ -2454,7 +2455,7 @@ blockquote {
   border: 1px dashed color-mix(in srgb, var(--line-strong) 80%, transparent);
   border-radius: 10px;
   color: var(--ink-muted);
-  font-size: 0.64rem;
+  font-size: 0.8rem;
   line-height: 1.4;
 }
 
@@ -2470,7 +2471,7 @@ blockquote {
 
 .page-note-action {
   flex: 0 0 auto;
-  font-size: 0.66rem;
+  font-size: 0.8rem;
 }
 
 .weather-block {
@@ -2577,7 +2578,7 @@ blockquote {
 .on-this-day-date {
   flex: 0 0 auto;
   color: var(--ink-muted);
-  font-size: 0.6rem;
+  font-size: 0.8rem;
   font-weight: 700;
   letter-spacing: 0.07em;
   text-transform: uppercase;
@@ -2587,7 +2588,7 @@ blockquote {
   overflow: hidden;
   color: var(--ink-soft);
   font-family: var(--font-serif);
-  font-size: 0.78rem;
+  font-size: 0.84rem;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -2596,7 +2597,7 @@ blockquote {
   display: -webkit-box;
   overflow: hidden;
   color: var(--ink-muted);
-  font-size: 0.66rem;
+  font-size: 0.8rem;
   line-height: 1.5;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
@@ -2604,7 +2605,7 @@ blockquote {
 
 .journal-empty {
   color: var(--ink-muted);
-  font-size: 0.66rem;
+  font-size: 0.8rem;
   font-style: italic;
   line-height: 1.5;
 }
@@ -2615,7 +2616,7 @@ blockquote {
   align-items: baseline;
   gap: 4px;
   color: var(--ink-muted);
-  font-size: 0.62rem;
+  font-size: 0.8rem;
 }
 
 .mood-readout strong {
@@ -2676,7 +2677,7 @@ blockquote {
   display: flex;
   justify-content: space-between;
   margin-top: -3px;
-  font-size: 0.55rem;
+  font-size: 0.8rem;
   letter-spacing: 0.04em;
   color: var(--ink-muted);
   text-transform: lowercase;
@@ -2688,7 +2689,7 @@ blockquote {
   border: 1px solid var(--line);
   border-radius: 99px;
   color: var(--ink-muted);
-  font-size: 0.64rem;
+  font-size: 0.8rem;
   font-style: italic;
 }
 
@@ -2701,7 +2702,7 @@ blockquote {
 }
 
 .entry-summary {
-  font-size: 0.68rem;
+  font-size: 0.8rem;
   line-height: 1.5;
   color: var(--ink-soft);
 }
@@ -2748,13 +2749,13 @@ blockquote {
 
 .palette-vibe {
   font-family: var(--font-serif);
-  font-size: 0.82rem;
+  font-size: 0.84rem;
   font-style: italic;
   color: var(--ink-soft);
 }
 
 .palette-hint {
-  font-size: 0.57rem;
+  font-size: 0.8rem;
   color: var(--ink-muted);
 }
 
@@ -2764,7 +2765,7 @@ blockquote {
   gap: 6px;
   padding-top: 11px;
   border-top: 1px solid var(--line);
-  font-size: 0.59rem;
+  font-size: 0.8rem;
   line-height: 1.5;
   color: var(--ink-muted);
 }
@@ -2907,7 +2908,7 @@ blockquote {
 
 .overview-date {
   margin-top: 2px;
-  font-size: 0.66rem;
+  font-size: 0.8rem;
   color: var(--ink-muted);
 }
 
@@ -2930,7 +2931,7 @@ blockquote {
   align-items: center;
   gap: 5px;
   color: var(--ink-muted);
-  font-size: 0.57rem;
+  font-size: 0.8rem;
   font-weight: 650;
   letter-spacing: 0.06em;
   text-align: center;
@@ -2961,7 +2962,7 @@ blockquote {
   border-radius: 50%;
   background: var(--surface);
   color: var(--ink-muted);
-  font-size: 0.62rem;
+  font-size: 0.8rem;
   font-weight: 650;
   text-transform: none;
   transition:
@@ -3025,7 +3026,7 @@ blockquote {
   border: 1px solid color-mix(in srgb, var(--sage) 34%, transparent);
   border-radius: 999px;
   background: var(--sage-wash);
-  font-size: 0.6rem;
+  font-size: 0.8rem;
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -3048,13 +3049,13 @@ blockquote {
   max-width: 56ch;
   margin-left: auto;
   margin-right: auto;
-  font-size: 0.76rem;
+  font-size: 0.84rem;
   line-height: 1.6;
   color: var(--ink-soft);
 }
 
 .overview-note {
-  font-size: 0.64rem;
+  font-size: 0.8rem;
   line-height: 1.5;
   color: var(--ink-muted);
   font-style: italic;
@@ -3071,7 +3072,7 @@ blockquote {
   border-radius: 11px;
   background: var(--clay-soft);
   color: var(--clay);
-  font-size: 0.68rem;
+  font-size: 0.8rem;
   line-height: 1.5;
   text-align: left;
 }
@@ -3154,7 +3155,7 @@ blockquote {
 .overview-result .emotion-badge {
   align-self: center;
   padding: 4px 11px;
-  font-size: 0.68rem;
+  font-size: 0.8rem;
 }
 
 .overview-result .entry-summary {
@@ -3208,7 +3209,7 @@ blockquote {
 }
 
 .overview-palette-row .palette-hint {
-  font-size: 0.6rem;
+  font-size: 0.8rem;
 }
 
 .overview-palette-row .palette-copy {
@@ -3240,7 +3241,7 @@ blockquote {
   justify-content: center;
   gap: 8px;
   padding: 10px;
-  font-size: 0.68rem;
+  font-size: 0.8rem;
   color: var(--ink-muted);
 }
 
@@ -3277,7 +3278,7 @@ blockquote {
 .overview-settled-sub {
   max-width: 46ch;
   margin-top: -3px;
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   line-height: 1.5;
   color: var(--ink-muted);
 }
@@ -3347,7 +3348,7 @@ blockquote {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 0.56rem;
+  font-size: 0.8rem;
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -3388,12 +3389,12 @@ blockquote {
 }
 
 .overview-tile-value span {
-  font-size: 0.62rem;
+  font-size: 0.8rem;
   color: var(--ink-muted);
 }
 
 .overview-tile-note {
-  font-size: 0.62rem;
+  font-size: 0.8rem;
   font-style: italic;
   line-height: 1.4;
   color: var(--ink-muted);
@@ -3406,7 +3407,7 @@ blockquote {
   border-radius: 999px;
   background: color-mix(in srgb, var(--tile-accent, var(--sage)) 10%, transparent);
   color: var(--ink-soft);
-  font-size: 0.63rem;
+  font-size: 0.8rem;
   font-weight: 620;
 }
 
@@ -3419,7 +3420,7 @@ blockquote {
 
 .overview-tile .tag-chip {
   padding: 2px 7px;
-  font-size: 0.57rem;
+  font-size: 0.8rem;
 }
 
 .overview-tile-swatches {
@@ -3531,7 +3532,7 @@ blockquote {
   display: block;
   margin-bottom: 6px;
   color: var(--ink-soft);
-  font-size: 0.62rem;
+  font-size: 0.8rem;
   font-weight: 700;
   letter-spacing: 0.11em;
   text-transform: uppercase;
@@ -3571,7 +3572,7 @@ blockquote {
   flex-wrap: wrap;
   margin-top: 6px;
   color: var(--ink-muted);
-  font-size: 0.6rem;
+  font-size: 0.8rem;
 }
 
 .reflection-answer-error {
@@ -3584,7 +3585,7 @@ blockquote {
   border-radius: 10px;
   background: var(--danger-soft);
   color: var(--danger-deep);
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   line-height: 1.5;
 }
 
@@ -3621,7 +3622,7 @@ blockquote {
 }
 
 .delete-page-copy {
-  font-size: 0.78rem;
+  font-size: 0.84rem;
   line-height: 1.65;
   color: var(--ink-soft);
 }
@@ -3645,7 +3646,7 @@ blockquote {
 }
 
 .reset-modal-detail {
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   line-height: 1.55;
   color: var(--ink-soft);
 }
@@ -3692,7 +3693,7 @@ blockquote {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: 0.64rem;
+  font-size: 0.8rem;
   color: var(--ink-muted);
 }
 
@@ -3717,7 +3718,7 @@ blockquote {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  font-size: 0.78rem;
+  font-size: 0.84rem;
   font-weight: 680;
   letter-spacing: 0.015em;
   color: var(--ink);
@@ -3730,7 +3731,7 @@ blockquote {
 .settings-copy {
   max-width: 66ch;
   margin-bottom: 11px;
-  font-size: 0.74rem;
+  font-size: 0.9rem;
   line-height: 1.6;
   color: var(--ink-soft);
 }
@@ -3743,14 +3744,14 @@ blockquote {
 }
 
 .preference-label {
-  font-size: 0.73rem;
+  font-size: 0.8rem;
   font-weight: 640;
   color: var(--ink);
 }
 
 .preference-hint {
   max-width: 62ch;
-  font-size: 0.65rem;
+  font-size: 0.8rem;
   line-height: 1.5;
   color: var(--ink-muted);
 }
@@ -3816,7 +3817,7 @@ blockquote {
 }
 
 .palette-option-copy strong {
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   font-weight: 650;
 }
 
@@ -3824,7 +3825,7 @@ blockquote {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 0.61rem;
+  font-size: 0.8rem;
   color: var(--ink-muted);
 }
 
@@ -3979,13 +3980,13 @@ blockquote {
 }
 
 .compute-option-copy strong {
-  font-size: 0.73rem;
+  font-size: 0.8rem;
   font-weight: 650;
   color: var(--ink);
 }
 
 .compute-option-copy span {
-  font-size: 0.64rem;
+  font-size: 0.8rem;
   line-height: 1.4;
   color: var(--ink-muted);
 }
@@ -4001,7 +4002,7 @@ blockquote {
   padding: 8px 10px;
   border-radius: 9px;
   background: var(--surface-muted);
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   line-height: 1.45;
   color: var(--ink-muted);
 }
@@ -4017,7 +4018,7 @@ blockquote {
   border: 1px solid color-mix(in srgb, var(--clay) 26%, transparent);
   border-radius: 8px;
   background: var(--clay-soft);
-  font-size: 0.68rem;
+  font-size: 0.8rem;
   line-height: 1.45;
   color: var(--clay);
 }
@@ -4031,7 +4032,7 @@ blockquote {
 
 .settings-fineprint {
   margin-top: 10px;
-  font-size: 0.65rem;
+  font-size: 0.8rem;
   line-height: 1.55;
   color: var(--ink-muted);
 }
@@ -4044,7 +4045,7 @@ blockquote {
 }
 
 .path-label {
-  font-size: 0.6rem;
+  font-size: 0.8rem;
   font-weight: 650;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -4068,7 +4069,7 @@ blockquote {
   text-overflow: ellipsis;
   white-space: nowrap;
   font-family: var(--font-mono);
-  font-size: 0.65rem;
+  font-size: 0.8rem;
   color: var(--ink-soft);
 }
 
@@ -4094,7 +4095,7 @@ blockquote {
 }
 
 .stat-grid span {
-  font-size: 0.58rem;
+  font-size: 0.8rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--ink-muted);
@@ -4119,7 +4120,7 @@ blockquote {
   border-radius: 99px;
   background: var(--surface-muted);
   color: var(--ink-muted);
-  font-size: 0.6rem;
+  font-size: 0.8rem;
   font-weight: 600;
   letter-spacing: 0.03em;
 }
@@ -4148,7 +4149,7 @@ blockquote {
 .security-list li {
   position: relative;
   padding-left: 14px;
-  font-size: 0.71rem;
+  font-size: 0.8rem;
   line-height: 1.5;
   color: var(--ink-soft);
 }
@@ -4169,7 +4170,7 @@ blockquote {
   align-items: flex-start;
   gap: 6px;
   margin-top: 9px;
-  font-size: 0.69rem;
+  font-size: 0.8rem;
   line-height: 1.5;
 }
 
@@ -4194,7 +4195,7 @@ blockquote {
   text-overflow: ellipsis;
   white-space: nowrap;
   font-family: var(--font-mono);
-  font-size: 0.6rem;
+  font-size: 0.8rem;
   color: var(--ink-muted);
 }
 
@@ -4224,7 +4225,7 @@ blockquote {
   display: flex;
   gap: 9px;
   color: var(--danger-deep);
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   line-height: 1.5;
 }
 
@@ -4240,7 +4241,7 @@ blockquote {
 }
 
 .purge-label {
-  font-size: 0.66rem;
+  font-size: 0.8rem;
   color: var(--ink-soft);
 }
 
@@ -4259,7 +4260,7 @@ blockquote {
   background: var(--surface);
   color: var(--ink);
   font-family: var(--font-mono);
-  font-size: 0.76rem;
+  font-size: 0.84rem;
   letter-spacing: 0.08em;
   outline: 0;
 }
@@ -4282,7 +4283,7 @@ blockquote {
   display: grid;
   grid-template-columns: 92px 1fr;
   gap: 4px 10px;
-  font-size: 0.68rem;
+  font-size: 0.8rem;
   color: var(--ink-muted);
 }
 
@@ -4351,7 +4352,7 @@ blockquote {
 }
 
 .toast-copy p {
-  font-size: 0.73rem;
+  font-size: 0.8rem;
   line-height: 1.45;
   color: var(--ink);
 }
@@ -4363,7 +4364,7 @@ blockquote {
   text-overflow: ellipsis;
   white-space: nowrap;
   font-family: var(--font-mono);
-  font-size: 0.59rem;
+  font-size: 0.8rem;
   color: var(--ink-muted);
 }
 
@@ -4409,7 +4410,7 @@ blockquote {
 
 .boot-tagline {
   max-width: 36ch;
-  font-size: 0.78rem;
+  font-size: 0.84rem;
   line-height: 1.65;
   color: var(--ink-muted);
 }
@@ -4445,7 +4446,7 @@ blockquote {
 }
 
 .boot-error-card p {
-  font-size: 0.78rem;
+  font-size: 0.84rem;
   line-height: 1.6;
   color: var(--ink-soft);
 }
@@ -4723,7 +4724,7 @@ blockquote {
   }
 
   .overview-step {
-    font-size: 0.52rem;
+    font-size: 0.8rem;
   }
 
   .overview-rows {
@@ -4901,7 +4902,7 @@ blockquote {
 
 .error-line {
   flex: 1 0 100%;
-  font-size: 0.68rem;
+  font-size: 0.8rem;
   line-height: 1.5;
   color: var(--danger);
 }
@@ -4917,7 +4918,7 @@ blockquote {
 
 .local-chip {
   padding: 3px 6px;
-  font-size: 0.5rem;
+  font-size: 0.8rem;
   gap: 3px;
 }
 
@@ -4968,7 +4969,7 @@ blockquote {
 }
 
 .photo-date-label {
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   font-weight: 650;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -4983,12 +4984,12 @@ blockquote {
   background: var(--surface);
   color: var(--ink);
   font: inherit;
-  font-size: 0.82rem;
+  font-size: 0.84rem;
 }
 
 .photo-date-note {
   grid-column: 1 / -1;
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   line-height: 1.45;
   color: var(--ink-soft);
 }
@@ -5029,7 +5030,7 @@ blockquote {
   flex-wrap: wrap;
   justify-content: space-between;
   gap: 4px 12px;
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   color: var(--ink-muted);
 }
 
@@ -5061,7 +5062,7 @@ blockquote {
 }
 
 .photo-placeholder span {
-  font-size: 0.72rem;
+  font-size: 0.8rem;
 }
 
 .photo-controls {
@@ -5080,7 +5081,7 @@ blockquote {
   border-radius: var(--radius-md);
   background: var(--clay-soft);
   color: var(--ink-soft);
-  font-size: 0.74rem;
+  font-size: 0.8rem;
   line-height: 1.45;
 }
 
@@ -5093,7 +5094,7 @@ blockquote {
   align-items: flex-start;
   gap: 5px;
   margin: auto 0 0;
-  font-size: 0.68rem;
+  font-size: 0.8rem;
   line-height: 1.45;
   color: var(--ink-muted);
 }
@@ -5110,7 +5111,7 @@ blockquote {
   flex-wrap: wrap;
   justify-content: space-between;
   gap: 4px 12px;
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   color: var(--ink-muted);
 }
 
@@ -5142,7 +5143,7 @@ blockquote {
 
 .photo-review-hint {
   margin: 0;
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   line-height: 1.45;
   color: var(--ink-muted);
 }
@@ -5162,13 +5163,13 @@ blockquote {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  font-size: 0.76rem;
+  font-size: 0.84rem;
   line-height: 1.45;
 }
 
 .photo-reading span {
   color: var(--ink-muted);
-  font-size: 0.7rem;
+  font-size: 0.8rem;
 }
 
 .photo-modal-foot {
@@ -5238,7 +5239,7 @@ blockquote {
   align-items: baseline;
   justify-content: space-between;
   gap: 12px;
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   color: var(--ink-muted);
 }
 
@@ -5275,7 +5276,7 @@ blockquote {
 
 .model-setup-skip-note {
   margin: 2px 0 0;
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   line-height: 1.45;
   color: var(--ink-muted);
 }
@@ -5298,7 +5299,7 @@ blockquote {
 
 .model-setup-ready p {
   margin: 0;
-  font-size: 0.76rem;
+  font-size: 0.84rem;
   line-height: 1.45;
 }
 
@@ -5323,7 +5324,7 @@ blockquote {
 .model-assets-loading {
   margin: 0;
   padding: 9px 0;
-  font-size: 0.74rem;
+  font-size: 0.8rem;
   color: var(--ink-muted);
 }
 
@@ -5371,12 +5372,12 @@ blockquote {
 }
 
 .model-asset-head strong {
-  font-size: 0.78rem;
+  font-size: 0.84rem;
   color: var(--ink);
 }
 
 .model-asset-state {
-  font-size: 0.64rem;
+  font-size: 0.8rem;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--ink-muted);
@@ -5393,7 +5394,7 @@ blockquote {
   text-overflow: ellipsis;
   white-space: nowrap;
   font-family: var(--font-mono);
-  font-size: 0.62rem;
+  font-size: 0.8rem;
   color: var(--ink-muted);
 }
 
@@ -5402,7 +5403,7 @@ blockquote {
   flex-wrap: wrap;
   gap: 3px 10px;
   margin-top: 4px;
-  font-size: 0.64rem;
+  font-size: 0.8rem;
   color: var(--ink-muted);
 }
 
@@ -5416,7 +5417,7 @@ blockquote {
   align-items: flex-start;
   gap: 5px;
   margin: 5px 0 0;
-  font-size: 0.68rem;
+  font-size: 0.8rem;
   line-height: 1.4;
   color: var(--danger-deep);
 }
@@ -5430,7 +5431,7 @@ blockquote {
 }
 
 .model-asset-actions .text-button {
-  font-size: 0.64rem;
+  font-size: 0.8rem;
 }
 
 .model-assets.is-compact .model-asset {
