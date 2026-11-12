@@ -42,7 +42,7 @@ export default function Header({
         </div>
         <div className="brand-copy">
           <h1>Lichen Journal</h1>
-          <p>Private daily writing with offline AI</p>
+          <p>Private daily writing. All on your device.</p>
         </div>
       </div>
 
@@ -76,10 +76,10 @@ export default function Header({
           type="button"
           className="security-badge"
           onClick={onOpenSettings}
-          title="Offline after setup. The renderer has no network path; model files download only when you ask. No accounts, no sync, no analytics."
+          title="Stays offline after setup. Files download only when you ask. No accounts, no sync, no analytics."
         >
           <LockIcon size={14} />
-          <span>Local &amp; On-Device</span>
+          <span>Private &amp; Offline</span>
         </button>
 
         <button

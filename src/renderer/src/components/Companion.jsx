@@ -29,21 +29,21 @@ function companionView(status, busy) {
       tone: 'is-loading',
       label: 'Waking',
       progress,
-      copy: progress > 0 ? `Waking the local model… ${progress}%` : 'Waking the local model…'
+      copy: progress > 0 ? `Waking the companion… ${progress}%` : 'Waking the companion…'
     };
   }
   if (status.state === 'missing') {
     return {
       tone: 'is-warning',
       label: 'Offline',
-      copy: 'The MiniCPM-V model file is missing from this installation.'
+      copy: 'The companion isn’t installed yet.'
     };
   }
   if (status.state === 'error') {
     return {
       tone: 'is-error',
       label: 'Offline',
-      copy: status.error?.message || 'The local model could not start.'
+      copy: status.error?.message || 'The companion could not start.'
     };
   }
   if (status.state === 'disposed') {
@@ -54,14 +54,14 @@ function companionView(status, busy) {
       tone: 'is-ready',
       label: 'Online',
       copy: status.computeFallback
-        ? 'Ready on the processor. The video card could not be used.'
+        ? 'Ready. Your video card couldn’t be used, so it’s using the standard setting.'
         : 'Ready on this device.'
     };
   }
   if (status.modelPresent) {
-    return { tone: 'is-ready', label: 'Online', copy: 'Loads on the first reflection.' };
+    return { tone: 'is-ready', label: 'Online', copy: 'Starts when you ask for a reflection.' };
   }
-  return { label: 'Checking', copy: 'Looking for the local model file…' };
+  return { label: 'Checking', copy: 'Looking for the companion…' };
 }
 
 function CompanionStatus({ status, busy }) {
@@ -98,7 +98,7 @@ function CompanionStatus({ status, busy }) {
               <dd>{status.modelPresent ? formatModelBytes(status.modelBytes) : 'Not found'}</dd>
             </div>
           </dl>
-          <p className="companion-tooltip-note">Runs entirely on this machine. Never uploaded.</p>
+          <p className="companion-tooltip-note">Runs entirely on this device. Never uploaded.</p>
         </div>
       </span>
       {view.progress !== undefined ? (
@@ -144,12 +144,12 @@ export default function Companion({
           <LichenMark size={34} />
           <div>
             <p className="eyebrow">Companion</p>
-            <h2 id="companion-title">Local reflection</h2>
+            <h2 id="companion-title">A quiet reflection</h2>
           </div>
         </div>
         <span className="local-chip">
           <CpuIcon size={12} />
-          on-device
+          offline
         </span>
       </header>
 
@@ -173,13 +173,13 @@ export default function Companion({
           <div>
             <p>
               {status.state === 'missing'
-                ? 'The companion model is not installed yet. Journalling still works fully offline.'
-                : status.error?.message || 'The local model could not start.'}
+                ? 'The companion isn’t installed yet. You can still journal offline.'
+                : status.error?.message || 'The companion could not start.'}
             </p>
             <div className="alert-actions">
               {status.state === 'missing' ? (
                 <button type="button" className="text-button" onClick={onDownloadModel}>
-                  Download model
+                  Set up the companion
                 </button>
               ) : (
                 <button type="button" className="text-button" onClick={onReloadModel} disabled={Boolean(busy)}>

@@ -15,13 +15,13 @@ function stateLabel(asset) {
     case 'downloading':
       return 'Downloading';
     case 'verifying':
-      return 'Verifying';
+      return 'Checking';
     case 'installing':
-      return 'Installing';
+      return 'Finishing';
     case 'paused':
       return 'Paused';
     case 'invalid':
-      return 'Needs replacement';
+      return 'Needs a fresh copy';
     case 'error':
       return 'Download failed';
     default:
@@ -36,10 +36,11 @@ export default function ModelAssetList({
   onCancel,
   onImportFile,
   disabled = false,
-  compact = false
+  compact = false,
+  showFile = !compact
 }) {
   if (!status) {
-    return <p className="model-assets-loading">Checking model files…</p>;
+    return <p className="model-assets-loading">Checking what&apos;s already here…</p>;
   }
   const busy = Boolean(status.busy || status.downloading);
   const assets = (assetIds || Object.keys(status.assets || {}))
@@ -76,12 +77,14 @@ export default function ModelAssetList({
                   {stateLabel(asset)}
                 </span>
               </div>
-              {!compact ? <code className="model-asset-file">{asset.file}</code> : null}
+              {showFile ? <code className="model-asset-file">{asset.file}</code> : null}
               <div className="model-asset-meta">
                 <span>
                   {formatBytes(asset.bytesDownloaded)} / {formatBytes(asset.expectedBytes)}
                 </span>
-                {asset.canResume ? <span>Partial file ready to resume</span> : null}
+                {asset.canResume ? (
+                  <span>Partly downloaded. You can pick up where you left off.</span>
+                ) : null}
               </div>
               {active || asset.progress > 0 ? (
                 <div

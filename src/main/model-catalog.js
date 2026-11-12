@@ -22,7 +22,7 @@ const OCR_MODEL = Object.freeze({
 
 const OCR_PROJECTOR = Object.freeze({
   id: 'ocrProjector',
-  label: 'Vision projector',
+  label: 'Photo reader support',
   file: 'mmproj-model-f16-4x.gguf',
   bytes: 901017536,
   sha256: 'ceed82261b3b1380c3165f8b37c10117a50093be1362cbfeeb692fa036444682',

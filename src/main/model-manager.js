@@ -467,7 +467,7 @@ class ModelStore extends EventEmitter {
     if (!stat.isFile() || stat.size !== asset.bytes) {
       throw new ModelManagerError(
         'MODEL_INVALID',
-        `That file is not the expected ${asset.label.toLowerCase()} model.`
+        'That file isn’t the one Lichen Journal expects. Choose the right file and try again.'
       );
     }
 

@@ -17,7 +17,7 @@ import {
 } from './Icons.jsx';
 
 const TAGLINE =
-  'Private daily writing with offline AI. 100% on your machine, zero subscriptions.';
+  'Everything you write stays on your device. No subscriptions.';
 
 const LEAVE_COVER_MS = 450;
 const IDLE_COVER_MS = 4000;

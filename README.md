@@ -4,7 +4,7 @@
 > undergoing a lot of changes. Features, storage details, and packaging may
 > change before a stable release.
 
-**Private daily writing with offline AI. 100% on your machine, zero subscriptions.**
+**Private daily writing. Everything you write stays on your device. No subscriptions.**
 
 Lichen Journal is a desktop daily journal with a local SQLite vault, instant
 full-text search, and a small language model that offers one gentle reflection
@@ -246,7 +246,7 @@ actions available, so setup can be completed later. Once the files are installed
 the app does not use the network for normal operation.
 
 When the files are ready, the same window offers one optional question:
-**Make the companion faster?** Windows and Linux select the processor by default;
+**Want faster answers?** Windows and Linux select the processor by default;
 Apple Silicon selects its graphics chip. Choosing **Use my video card** runs a
 short real check — the companion is loaded and asked for a few tokens — and only
 then is the choice saved. If the check fails, the app keeps everything on the

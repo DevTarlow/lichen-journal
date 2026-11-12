@@ -197,7 +197,7 @@ export default function PhotoImportModal({
       setText(result.text || '');
       setFallbackNote(
         result.fallback
-          ? "Your video card couldn't read this photo, so the processor did it instead."
+          ? "Your video card couldn't help with this photo, so it was read the standard way."
           : ''
       );
       setPhase('review');
@@ -289,8 +289,8 @@ export default function PhotoImportModal({
 
         <div className="modal-body photo-modal-body">
           <p className="settings-copy photo-intro">
-            Choose a photo of a handwritten or printed page. MiniCPM-OCR reads it on
-            this device. The photo itself is never uploaded or saved.
+            Choose a photo of a handwritten or printed page. The photo reader reads
+            it on this device. The photo itself is never uploaded or saved.
           </p>
 
           <div className="photo-date-row">
@@ -355,8 +355,8 @@ export default function PhotoImportModal({
                   <AlertIcon size={16} />
                   <div>
                     <p>
-                      The local OCR model is missing from this installation. You can
-                      still type the page yourself, or check the paths in Settings.
+                      The photo reader isn’t installed yet. You can still type the
+                      page yourself, or set it up in Settings.
                     </p>
                     <button
                       type="button"

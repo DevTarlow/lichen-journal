@@ -59,13 +59,13 @@ function ReadingStage({ status }) {
       <LichenMark size={46} />
       <h3 className="overview-heading">Reading your page…</h3>
       <p className="overview-copy">
-        The companion is reading this page on your machine. It never leaves your device.
+        The companion is reading this page on your device. Nothing leaves it.
       </p>
       <div className="overview-loading">
         <span className="tiny-spinner" />
         <span>
           {status?.state === 'loading'
-            ? `Waking the local model… ${progress}%`
+            ? `Waking the companion… ${progress}%`
             : 'Listening for what this page holds…'}
         </span>
       </div>
@@ -436,7 +436,7 @@ export default function AfterWritingOverview({
             </p>
             <h3 className="overview-heading">What was this page about?</h3>
             <p className="overview-copy">
-              The companion read this page on your machine. It never writes into your entry.
+              The companion read this page on your device. It never writes into your entry.
             </p>
 
             {emotion || summary || tags.length ? (

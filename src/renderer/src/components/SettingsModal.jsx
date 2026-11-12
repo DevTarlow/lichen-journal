@@ -478,7 +478,7 @@ export default function SettingsModal({
             </p>
             <PathRow label="OCR model" value={info?.ocrModelPath} onCopy={handleCopy} />
             <PathRow
-              label="Vision projector"
+              label="Photo reader support"
               value={info?.ocrProjectorPath}
               onCopy={handleCopy}
             />
@@ -657,8 +657,8 @@ export default function SettingsModal({
               </h3>
             </div>
             <p className="about-tagline">
-              Lichen Journal · Private daily writing with offline AI. 100% on your machine, zero
-              subscriptions.
+              Lichen Journal · Private daily writing. Everything you write stays on your
+              device. No subscriptions.
             </p>
             <div className="about-grid">
               <span>Version</span>

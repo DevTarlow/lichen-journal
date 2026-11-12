@@ -167,13 +167,13 @@ export default function ModelSetupModal({
   const primaryLabel = !allReady
     ? modelBusy
       ? 'Downloading…'
-      : 'Download missing files'
+      : 'Download the extras'
     : computeBusy
       ? 'Checking…'
       : needsComputeChoice
         ? 'Continue'
         : compute?.choiceMade && compute.mode === 'cpu' && compute.lastError
-          ? 'Continue on the processor'
+          ? 'Continue with the standard setting'
           : 'Done';
 
   return (
@@ -192,16 +192,16 @@ export default function ModelSetupModal({
       >
         <header className="modal-head">
           <div>
-            <p className="eyebrow">First-run setup</p>
+            <p className="eyebrow">One-time setup</p>
             <h2 id="model-setup-title">
-              {allReady ? 'The local models are ready.' : 'Set up the local model files'}
+              {allReady ? "You're all set." : 'Set up the extras'}
             </h2>
           </div>
           <button
             type="button"
             className="icon-button"
             onClick={close}
-            aria-label="Close model setup"
+            aria-label="Close setup"
             disabled={computeBusy}
           >
             <XIcon size={18} />
@@ -211,23 +211,23 @@ export default function ModelSetupModal({
         <div className="modal-body model-setup-body">
           {!status ? (
             <p className="model-assets-loading" aria-live="polite">
-              Checking model files…
+              Checking what&apos;s already here…
             </p>
           ) : allReady ? (
             <>
               <div className="model-setup-ready" role="status">
                 <strong>Everything is installed.</strong>
-                <p>Reflections and photo pages now run entirely on this machine.</p>
+                <p>The writing companion and photo reader now work entirely on this device.</p>
               </div>
 
               {needsComputeChoice ? (
                 <section className="compute-choice" aria-labelledby="compute-choice-title">
                   <h3 className="compute-choice-title" id="compute-choice-title">
-                    Make the companion faster?
+                    Want faster answers?
                   </h3>
                   <p className="settings-copy">
-                    Use your {accelNoun} for quicker answers and photo reading. We&apos;ll
-                    check it once before turning it on.
+                    Your {accelNoun} can speed up answers and photo reading. We&apos;ll
+                    run a quick check before turning it on.
                   </p>
                   <div className="compute-options" role="radiogroup" aria-label="Performance choice">
                     <label
@@ -261,7 +261,7 @@ export default function ModelSetupModal({
                         disabled={computeBusy}
                       />
                       <span className="compute-option-copy">
-                        <strong>Keep it on the processor</strong>
+                        <strong>Use the standard setting</strong>
                         <span>Works on almost every computer</span>
                       </span>
                       {computeChoice === 'cpu' ? (
@@ -271,7 +271,7 @@ export default function ModelSetupModal({
                   </div>
                   <p className="settings-fineprint">
                     You can change this later in Settings. If the check doesn&apos;t work,
-                    we&apos;ll keep everything on the processor.
+                    nothing changes.
                   </p>
                 </section>
               ) : null}
@@ -283,15 +283,15 @@ export default function ModelSetupModal({
                 >
                   {compute.mode === 'gpu'
                     ? `Using your ${accelNoun} for faster answers.`
-                    : compute.lastError?.message || 'Using the processor.'}
+                    : 'Using the standard setting.'}
                 </p>
               ) : null}
             </>
           ) : (
             <>
               <p className="settings-copy model-setup-intro">
-                Lichen Journal does not bundle its model weights. Download them once
-                from Hugging Face, then the app works without a network connection.
+                The writing companion and the photo reader each need a one-time
+                download. After that, both work without an internet connection.
               </p>
               <div className="model-setup-summary">
                 <span>
@@ -306,21 +306,21 @@ export default function ModelSetupModal({
                 aria-valuemin={0}
                 aria-valuemax={100}
                 aria-valuenow={progress}
-                aria-label="Overall model download progress"
+                aria-label="Overall download progress"
               >
                 <span style={{ width: `${Math.max(2, progress)}%` }} />
               </div>
               <ModelAssetList
                 status={status}
+                showFile={false}
                 onDownload={(assetId) => run(() => onDownload(assetId))}
                 onCancel={onCancel}
                 onImportFile={(assetId) => run(() => onImportFile(assetId))}
                 disabled={busy}
               />
               <p className="model-setup-skip-note">
-                You can skip this and still write, search, export, and keep your
-                journal. Reflections and photo pages will offer the download again
-                in Settings.
+                You can skip this and still write, search, and export. The download
+                will be waiting in Settings whenever you want it.
               </p>
             </>
           )}
@@ -336,7 +336,7 @@ export default function ModelSetupModal({
         <footer className="modal-foot model-setup-foot">
           <span className="modal-foot-note">
             <LockIcon size={12} />
-            Downloaded once, verified locally.
+            Downloaded once. Checked on your device.
           </span>
           <div className="model-setup-actions">
             <button
@@ -347,10 +347,10 @@ export default function ModelSetupModal({
                   const result = await onImportFolder();
                   if (result && !result.canceled && !result.imported?.length) {
                     setActionError(
-                      'No matching model files were found in that folder. Choose the folder containing the three GGUF files.'
+                      'We couldn’t find the right files in that folder. Choose the folder that holds all three downloaded files.'
                     );
                   } else if (result?.failed?.length) {
-                    setActionError('Some files did not match the expected model or could not be imported.');
+                    setActionError('Some files didn’t match, or couldn’t be copied over. Check the folder and try again.');
                   }
                 })
               }

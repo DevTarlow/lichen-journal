@@ -95,7 +95,7 @@ function BootScreen() {
       <p className="eyebrow">Private daily writing</p>
       <h1>Lichen Journal</h1>
       <p className="boot-tagline">
-        Private daily writing with offline AI. 100% on your machine, zero subscriptions.
+        Everything you write stays on your device. No subscriptions.
       </p>
       <span className="boot-loader" aria-label="Opening the local vault" />
     </div>
@@ -315,9 +315,9 @@ export default function App() {
     try {
       const result = await modelSetup.importFolder();
       if (result && !result.canceled && !result.imported?.length) {
-        notify('No matching model files were found in that folder.', 'error');
+        notify('We couldn’t find the right files in that folder.', 'error');
       } else if (result?.failed?.length) {
-        notify('Some model files could not be imported. Check the paths below.', 'error');
+        notify('Some files couldn’t be added. Check the folder and try again.', 'error');
       }
     } catch (error) {
       notify(error.message, 'error');
