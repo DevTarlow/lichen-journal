@@ -188,12 +188,14 @@ export default function ModelSetupModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="model-setup-title"
+        data-testid="model-setup"
+        data-state={allReady ? 'ready' : 'setup'}
         ref={dialogRef}
       >
         <header className="modal-head">
           <div>
             <p className="eyebrow">One-time setup</p>
-            <h2 id="model-setup-title">
+            <h2 id="model-setup-title" data-testid="model-setup-title">
               {allReady ? "You're all set." : 'Set up the extras'}
             </h2>
           </div>
@@ -202,6 +204,7 @@ export default function ModelSetupModal({
             className="icon-button"
             onClick={close}
             aria-label="Close setup"
+            data-testid="model-setup-close"
             disabled={computeBusy}
           >
             <XIcon size={18} />
@@ -237,6 +240,7 @@ export default function ModelSetupModal({
                         type="radio"
                         name="compute-choice"
                         value="gpu"
+                        data-testid="compute-choice-gpu"
                         checked={computeChoice === 'gpu'}
                         onChange={() => setComputeChoice('gpu')}
                         disabled={computeBusy}
@@ -256,6 +260,7 @@ export default function ModelSetupModal({
                         type="radio"
                         name="compute-choice"
                         value="cpu"
+                        data-testid="compute-choice-cpu"
                         checked={computeChoice === 'cpu'}
                         onChange={() => setComputeChoice('cpu')}
                         disabled={computeBusy}
@@ -279,6 +284,9 @@ export default function ModelSetupModal({
               {allReady && compute?.choiceMade ? (
                 <p
                   className={`compute-status ${compute.mode === 'gpu' ? 'is-ok' : ''}`}
+                  data-testid="compute-status"
+                  data-mode={compute.mode}
+                  data-error-code={compute.lastError?.code || ''}
                   aria-live="polite"
                 >
                   {compute.mode === 'gpu'
@@ -289,7 +297,7 @@ export default function ModelSetupModal({
             </>
           ) : (
             <>
-              <p className="settings-copy model-setup-intro">
+              <p className="settings-copy model-setup-intro" data-testid="model-setup-intro">
                 The writing companion and the photo reader each need a one-time
                 download. After that, both work without an internet connection.
               </p>
@@ -362,6 +370,7 @@ export default function ModelSetupModal({
               <button
                 type="button"
                 className="button button-quiet"
+                data-testid="model-setup-not-now"
                 onClick={close}
                 disabled={computeBusy}
               >
@@ -372,6 +381,7 @@ export default function ModelSetupModal({
               ref={primaryRef}
               type="button"
               className="button button-primary"
+              data-testid="model-setup-primary"
               onClick={handlePrimary}
               disabled={computeBusy || (!allReady && (modelBusy || !missing.length))}
             >

@@ -60,7 +60,12 @@ export default function ModelAssetList({
         const canDownload = !ready && !active;
         const blocked = disabled || (busy && status.downloading !== asset.id);
         return (
-          <div key={asset.id} className={`model-asset is-${asset.state}`}>
+          <div
+            key={asset.id}
+            className={`model-asset is-${asset.state}`}
+            data-testid={`model-asset-${asset.id}`}
+            data-state={asset.state}
+          >
             <div className="model-asset-icon" aria-hidden="true">
               {ready ? (
                 <CheckIcon size={15} />
@@ -73,7 +78,10 @@ export default function ModelAssetList({
             <div className="model-asset-main">
               <div className="model-asset-head">
                 <strong>{asset.label}</strong>
-                <span className={`model-asset-state ${ready ? 'is-ok' : ''}`}>
+                <span
+                  className={`model-asset-state ${ready ? 'is-ok' : ''}`}
+                  data-testid={`model-asset-state-${asset.id}`}
+                >
                   {stateLabel(asset)}
                 </span>
               </div>
@@ -99,7 +107,11 @@ export default function ModelAssetList({
                 </div>
               ) : null}
               {asset.error ? (
-                <p className="model-asset-error" role="alert">
+                <p
+                  className="model-asset-error"
+                  role="alert"
+                  data-testid={`model-asset-error-${asset.id}`}
+                >
                   <AlertIcon size={13} />
                   {asset.error.message}
                 </p>

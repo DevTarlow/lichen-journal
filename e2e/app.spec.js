@@ -51,11 +51,11 @@ async function launchApp(userDataDir, extraEnv = {}, options = {}) {
   page.on('pageerror', (error) => errors.push(error.message));
   await page.waitForSelector('.app-header', { timeout: 45_000 });
   if (options.dismissModelSetup !== false && !hasCompanionModel(extraEnv)) {
-    const setupHeading = page.getByRole('heading', { name: 'Set up the extras' });
+    const setup = page.getByTestId('model-setup');
     try {
-      await setupHeading.waitFor({ state: 'visible', timeout: 3000 });
-      await page.getByRole('button', { name: 'Not now' }).click();
-      await setupHeading.waitFor({ state: 'hidden', timeout: 5000 });
+      await setup.waitFor({ state: 'visible', timeout: 3000 });
+      await page.getByTestId('model-setup-not-now').click();
+      await setup.waitFor({ state: 'hidden', timeout: 5000 });
     } catch {
       // No first-run setup was shown, or it was already dismissed.
     }
@@ -91,7 +91,7 @@ test('boots into an empty private vault', async () => {
   const { app, page, errors } = await launchApp(userDataDir);
   try {
     await expect(page.getByRole('heading', { name: 'Lichen Journal' }).first()).toBeVisible();
-    await expect(page.getByText('Private & Offline')).toBeVisible();
+    await expect(page.getByTestId('security-badge')).toBeVisible();
     await expect(page.getByText('A quiet place to notice', { exact: false })).toBeVisible();
     await expect(page.getByLabel('Journal entry')).toBeVisible();
     await expect(page.locator('.page-front .save-state')).toContainText('Not saved yet');
@@ -1037,27 +1037,25 @@ test('keeps first-run setup on the processor when the video-card check fails', a
     LICHEN_MODEL_TEST_MANIFEST: JSON.stringify(manifest)
   }, { dismissModelSetup: false });
   try {
-    await expect(
-      page.getByRole('heading', { name: 'Set up the extras' })
-    ).toBeVisible({ timeout: 30_000 });
-    await page.getByRole('button', { name: 'Download the extras' }).click();
-    await expect(
-      page.getByRole('heading', { name: "You're all set." })
-    ).toBeVisible({ timeout: 30_000 });
-    await page.getByRole('radio', { name: /Use my video card/ }).click();
-    await page.getByRole('button', { name: 'Continue', exact: true }).click();
-    await expect(page.getByRole('button', { name: 'Continue with the standard setting' })).toBeVisible({
+    const setup = page.getByTestId('model-setup');
+    await expect(setup).toBeVisible({ timeout: 30_000 });
+    await expect(setup).toHaveAttribute('data-state', 'setup');
+    await page.getByTestId('model-setup-primary').click();
+    await expect(setup).toHaveAttribute('data-state', 'ready', { timeout: 30_000 });
+    await expect(setup).not.toContainText(/GGUF|Hugging Face|OCR/i);
+    await page.getByTestId('compute-choice-gpu').click();
+    await page.getByTestId('model-setup-primary').click();
+    await expect(page.getByTestId('model-setup-primary')).toBeVisible({
       timeout: 90_000
     });
-    await expect(page.locator('.compute-status')).toContainText(/standard setting/i);
-    await page.getByRole('button', { name: 'Continue with the standard setting' }).click();
-    await expect(
-      page.getByRole('heading', { name: "You're all set." })
-    ).toHaveCount(0);
+    await expect(page.getByTestId('compute-status')).toHaveAttribute('data-mode', 'cpu');
+    await expect(page.getByTestId('compute-status')).toHaveAttribute('data-error-code', /.+/);
+    await page.getByTestId('model-setup-primary').click();
+    await expect(setup).toHaveCount(0);
     const settings = JSON.parse(fs.readFileSync(path.join(userDataDir, 'settings.json'), 'utf8'));
     expect(settings.compute.mode).toBe('cpu');
     expect(settings.compute.choiceMade).toBe(true);
-    expect(settings.compute.lastError.message).toMatch(/processor/i);
+    expect(settings.compute.lastError.code).toBeTruthy();
     expect(errors).toEqual([]);
   } finally {
     await app.close().catch(() => {});
@@ -1075,14 +1073,11 @@ test('offers model setup on first run and keeps journaling available', async () 
     LICHEN_MODEL_DIR: modelDir
   }, { dismissModelSetup: false });
   try {
-    await expect(
-      page.getByRole('heading', { name: 'Set up the extras' })
-    ).toBeVisible({ timeout: 30_000 });
-    await expect(page.getByText('need a one-time download', { exact: false })).toBeVisible();
-    await page.getByRole('button', { name: 'Not now' }).click();
-    await expect(
-      page.getByRole('heading', { name: 'Set up the extras' })
-    ).toHaveCount(0);
+    const setup = page.getByTestId('model-setup');
+    await expect(setup).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByTestId('model-setup-intro')).toContainText(/download/i);
+    await page.getByTestId('model-setup-not-now').click();
+    await expect(setup).toHaveCount(0);
 
     await page.getByRole('button', { name: /Begin today's entry/ }).click();
     await page.getByLabel('Entry title').fill('Offline first');
@@ -1092,7 +1087,9 @@ test('offers model setup on first run and keeps journaling available', async () 
     await page.getByRole('button', { name: 'Open vault settings' }).click();
     await expect(page.getByRole('heading', { name: 'Local companion' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Photo pages' })).toBeVisible();
-    await expect(page.locator('.model-asset-state').filter({ hasText: 'Not downloaded' })).toHaveCount(3);
+    for (const id of ['companion', 'ocrModel', 'ocrProjector']) {
+      await expect(page.getByTestId(`model-asset-${id}`)).toHaveAttribute('data-state', 'missing');
+    }
     expect(errors).toEqual([]);
   } finally {
     await app.close().catch(() => {});
@@ -1144,25 +1141,20 @@ test('downloads the model setup queue and installs verified files', async () => 
     LICHEN_MODEL_TEST_MANIFEST: JSON.stringify(manifest)
   }, { dismissModelSetup: false });
   try {
-    await expect(
-      page.getByRole('heading', { name: 'Set up the extras' })
-    ).toBeVisible({ timeout: 30_000 });
-    await page.getByRole('button', { name: 'Download the extras' }).click();
-    await expect(
-      page.getByRole('heading', { name: "You're all set." })
-    ).toBeVisible({ timeout: 30_000 });
+    const setup = page.getByTestId('model-setup');
+    await expect(setup).toBeVisible({ timeout: 30_000 });
+    await expect(setup).toHaveAttribute('data-state', 'setup');
+    await page.getByTestId('model-setup-primary').click();
+    await expect(setup).toHaveAttribute('data-state', 'ready', { timeout: 30_000 });
     expect(fs.readFileSync(path.join(modelDir, manifest[0].file))).toEqual(bodies['/companion']);
     expect(fs.readFileSync(path.join(modelDir, manifest[1].file))).toEqual(bodies['/ocr']);
     expect(fs.readFileSync(path.join(modelDir, manifest[2].file))).toEqual(bodies['/projector']);
 
     // The optional performance choice is the last step of first-run setup.
-    await expect(page.getByText('Want faster answers?')).toBeVisible();
-    const processorChoice = page.getByRole('radio', { name: /Use the standard setting/ });
+    const processorChoice = page.getByTestId('compute-choice-cpu');
     await expect(processorChoice).toBeChecked();
-    await page.getByRole('button', { name: 'Continue', exact: true }).click();
-    await expect(
-      page.getByRole('heading', { name: "You're all set." })
-    ).toHaveCount(0);
+    await page.getByTestId('model-setup-primary').click();
+    await expect(setup).toHaveCount(0);
     expect(errors).toEqual([]);
   } finally {
     await app.close().catch(() => {});
@@ -1253,9 +1245,7 @@ test('developer reset clears all data or keeps models with mock entries', async 
     const mockButton = page.getByRole('button', { name: 'Reset app with mock data (developer tool)' });
     await expect(freshButton).toBeVisible();
     await expect(mockButton).toBeVisible();
-    await expect(
-      page.getByRole('heading', { name: 'Set up the extras' })
-    ).toHaveCount(0);
+    await expect(page.getByTestId('model-setup')).toHaveCount(0);
 
     await mockButton.click();
     await expect(page.getByRole('heading', { name: 'Reset and load mock data?' })).toBeVisible();
@@ -1264,9 +1254,7 @@ test('developer reset clears all data or keeps models with mock entries', async 
       timeout: 30_000
     });
     await expect(page.getByText('Existing entry')).toHaveCount(0);
-    await expect(
-      page.getByRole('heading', { name: 'Set up the extras' })
-    ).toHaveCount(0);
+    await expect(page.getByTestId('model-setup')).toHaveCount(0);
     for (const asset of manifest) {
       expect(fs.existsSync(path.join(modelDir, asset.file))).toBe(true);
     }
@@ -1286,9 +1274,7 @@ test('developer reset clears all data or keeps models with mock entries', async 
     await freshButton.click();
     await expect(page.getByRole('heading', { name: 'Reset the app?' })).toBeVisible();
     await page.getByRole('button', { name: 'Reset everything', exact: true }).click();
-    await expect(
-      page.getByRole('heading', { name: 'Set up the extras' })
-    ).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByTestId('model-setup')).toBeVisible({ timeout: 30_000 });
     for (const asset of manifest) {
       expect(fs.existsSync(path.join(modelDir, asset.file))).toBe(false);
     }

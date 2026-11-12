@@ -455,10 +455,15 @@ overview (mood/themes/palette/final, the finished status, and Review opening ste
 four with saved data), Preferences (palette, page-turn, reduced motion, the
 video-card switch where available, persistence), the privacy page-turn, adding a
 page from a photo into a page that already has words, the first-run model setup
-with journaling after “Not now,” and the optional performance question with the
-processor path. On headless Linux CI,
+with journaling after “Not now,” and both the processor fallback and the saved
+compute state after the optional performance question. On headless Linux CI,
 tests launch Electron with `--no-sandbox --disable-gpu --user-data-dir=…` and
 `ELECTRON_OZONE_PLATFORM_HINT=x11`.
+
+The first-run setup and compute-status assertions use stable `data-testid`
+hooks (`model-setup`, `model-setup-primary`, `compute-choice-gpu`) and state
+attributes instead of matching display copy, so wording changes do not require
+test edits.
 
 ### Development reset controls
 

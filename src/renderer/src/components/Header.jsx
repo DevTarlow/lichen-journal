@@ -75,6 +75,7 @@ export default function Header({
         <button
           type="button"
           className="security-badge"
+          data-testid="security-badge"
           onClick={onOpenSettings}
           title="Stays offline after setup. Files download only when you ask. No accounts, no sync, no analytics."
         >
