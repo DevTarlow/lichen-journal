@@ -12,7 +12,21 @@ const { Vault } = require('../src/main/db.js');
 const { computeCapabilities } = require('../src/main/compute-utils.js');
 const BODY = 'The moss by the river was bright after the rain. I felt quiet and a little hopeful.';
 
-async function launchApp(userDataDir, extraEnv = {}) {
+const COMPANION_MODEL_FILE = 'MiniCPM-V-4_7-1B-Q4_K_M.gguf';
+
+function companionModelPath(extraEnv = {}) {
+  const dir =
+    extraEnv.LICHEN_MODEL_DIR ||
+    process.env.LICHEN_MODEL_DIR ||
+    path.join(ROOT, 'models');
+  return path.join(dir, COMPANION_MODEL_FILE);
+}
+
+function hasCompanionModel(extraEnv = {}) {
+  return fs.existsSync(companionModelPath(extraEnv));
+}
+
+async function launchApp(userDataDir, extraEnv = {}, options = {}) {
   const app = await electron.launch({
     args: [`--user-data-dir=${userDataDir}`,
       '--disable-gpu',
@@ -36,6 +50,16 @@ async function launchApp(userDataDir, extraEnv = {}) {
   });
   page.on('pageerror', (error) => errors.push(error.message));
   await page.waitForSelector('.app-header', { timeout: 45_000 });
+  if (options.dismissModelSetup !== false && !hasCompanionModel(extraEnv)) {
+    const setupHeading = page.getByRole('heading', { name: 'Set up the local model files' });
+    try {
+      await setupHeading.waitFor({ state: 'visible', timeout: 3000 });
+      await page.getByRole('button', { name: 'Not now' }).click();
+      await setupHeading.waitFor({ state: 'hidden', timeout: 5000 });
+    } catch {
+      // No first-run setup was shown, or it was already dismissed.
+    }
+  }
   return { app, page, errors };
 }
 
@@ -136,7 +160,11 @@ test('settings exposes the vault, verifies offline, and double-confirms purge', 
     await expect(page.getByRole('dialog')).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Vault settings' })).toBeVisible();
 
-    if ((process.platform === 'linux' || process.platform === 'win32') && process.arch === 'x64') {
+    if (
+      hasCompanionModel() &&
+      (process.platform === 'linux' || process.platform === 'win32') &&
+      process.arch === 'x64'
+    ) {
       await expect(page.getByLabel('Faster answers with my video card')).toBeVisible();
       await expect(page.getByText('Using the processor.')).toBeVisible();
     }
@@ -203,6 +231,10 @@ test('checks the video card without exposing driver details', async () => {
     test.skip();
     return;
   }
+  if (!hasCompanionModel()) {
+    test.skip();
+    return;
+  }
   const userDataDir = makeUserDataDir();
   const { app, page, errors } = await launchApp(userDataDir);
   try {
@@ -226,6 +258,10 @@ test('checks the video card without exposing driver details', async () => {
 
 test('Finish page walks the page through the after-writing overview', async () => {
   test.setTimeout(150_000);
+  if (!hasCompanionModel()) {
+    test.skip();
+    return;
+  }
   const userDataDir = makeUserDataDir();
   const { app, page, errors } = await launchApp(userDataDir);
   try {
@@ -768,6 +804,10 @@ test('rail shows the last three weeks and older pages', async () => {
 
 test('Finish page reads a page before any reflection has loaded the model', async () => {
   test.setTimeout(120_000);
+  if (!hasCompanionModel()) {
+    test.skip();
+    return;
+  }
   const userDataDir = makeUserDataDir();
   const { app, page, errors } = await launchApp(userDataDir);
   try {
@@ -995,7 +1035,7 @@ test('keeps first-run setup on the processor when the video-card check fails', a
   const { app, page, errors } = await launchApp(userDataDir, {
     LICHEN_MODEL_DIR: modelDir,
     LICHEN_MODEL_TEST_MANIFEST: JSON.stringify(manifest)
-  });
+  }, { dismissModelSetup: false });
   try {
     await expect(
       page.getByRole('heading', { name: 'Set up the local model files' })
@@ -1033,7 +1073,7 @@ test('offers model setup on first run and keeps journaling available', async () 
   const modelDir = fs.mkdtempSync(path.join(ROOT, '.e2e-models-'));
   const { app, page, errors } = await launchApp(userDataDir, {
     LICHEN_MODEL_DIR: modelDir
-  });
+  }, { dismissModelSetup: false });
   try {
     await expect(
       page.getByRole('heading', { name: 'Set up the local model files' })
@@ -1102,7 +1142,7 @@ test('downloads the model setup queue and installs verified files', async () => 
   const { app, page, errors } = await launchApp(userDataDir, {
     LICHEN_MODEL_DIR: modelDir,
     LICHEN_MODEL_TEST_MANIFEST: JSON.stringify(manifest)
-  });
+  }, { dismissModelSetup: false });
   try {
     await expect(
       page.getByRole('heading', { name: 'Set up the local model files' })
@@ -1207,7 +1247,7 @@ test('developer reset clears all data or keeps models with mock entries', async 
   const { app, page, errors } = await launchApp(userDataDir, {
     LICHEN_MODEL_DIR: modelDir,
     LICHEN_MODEL_TEST_MANIFEST: JSON.stringify(manifest)
-  });
+  }, { dismissModelSetup: false });
   try {
     const freshButton = page.getByRole('button', { name: 'Reset app (developer tool)' });
     const mockButton = page.getByRole('button', { name: 'Reset app with mock data (developer tool)' });
